@@ -4,35 +4,7 @@
       <div class="loader" v-if="loading"></div>
       <div class="user-data p-3">
         <div class="row">
-          <table class="table table-striped">
-            <tbody>
-              <tr>
-                <td>No Penerimaan</td>
-                <td>:</td>
-                <th>{{form.no_penerimaan}}</th>
-                <td>Tanggal</td>
-                <td>:</td>
-                <th>{{form.tanggal}}</th>
-              </tr>
-              <tr>
-                <td>No Purchase Order</td>
-                <td>:</td>
-                <th>{{form.no_purchase_order}}</th>
-                <td>Vendor</td>
-                <td>:</td>
-                <th>{{form.nama_vendor}}</th>
-              </tr>
-              <tr>
-                <td>No Spk</td>
-                <td>:</td>
-                <th>{{form.no_spk}}</th>
-                <td>Status</td>
-                <td>:</td>
-                <th>{{form.status_posting == '1' ? 'Aktif' : 'Tidak Aktif'}}</th>
-              </tr>
-            </tbody>
-          </table>
-          <!-- <div class="col-md-6">
+          <div class="col-md-6">
             <div class="form-group">
               <label>Nomor Penerimaan</label>
               <input type="text" readonly required v-model="form.no_penerimaan" class="form-control">
@@ -61,12 +33,12 @@
             </div>
             <div class="form-group">
               <label>Status Posting</label>
-              <select class="form-control" v-model="form.status_posting">
-                <option value="1">Aktif</option>
-                <option value="0">Tidak Aktif</option>
+              <select class="form-control" readonly disabled v-model="form.status_posting">
+                <option value="1">Belum Diposting</option>
+                <!-- <option value="0">Telah Diposting</option> -->
               </select>
             </div>
-          </div> -->
+          </div>
         </div>
       </div>
       <div class="user-data p-3 mt-3">
@@ -74,34 +46,12 @@
           <div class="col-md-12 mb-2">
             <div class="form-group">
               <label>Barang</label>
-              <model-select :options="getBarang"
+               <basic-select :options="getBarang"
+                              @select="onSelect"
                               v-model="form.id_barang"
                               placeholder="barang"
-                              class="barang"
-                              >
-              </model-select>
-            </div>
-            <div class="form-group">
-              <label>Satuan Penerimaan Barang</label>
-              <select class="form-control" v-model="form.satuan" @change="onChange($event)">
-                <option value="" disabled>-Pilih Satuan-</option>
-                <option value="satuan_besar">Satuan Besar</option>
-                <option value="satuan_kecil">Satuan Kecil</option>
-              </select>
-            </div>
-            <div class="form-group" v-if="form.satuan == 'satuan_besar'">
-              <label>Satuan Besar</label>
-              <input type="text" class="form-control" v-model="form.id_satuan_barang_besar" value="Box" readonly>
-              <input type="hidden" class="form-control" v-model="form.id_satuan" value="Box" readonly>
-            </div>
-            <div class="form-group" v-else-if="form.satuan == 'satuan_kecil'">
-              <label>Satuan Kecil</label>
-              <input type="text" class="form-control" v-model="form.id_satuan_barang_kecil" value="Pcs" readonly>
-              <input type="hidden" class="form-control" v-model="form.id_satuan" value="Pcs" readonly>
-            </div>
-            <div class="form-group" v-if="form.satuan != ''">
-              <label>Jumlah Kuantitas</label>
-              <input type="number" required v-model="form.qty" class="form-control">
+                              class="barang">
+              </basic-select>
             </div>
             <button type="button" v-if="form.satuan != '' && form.qty > 0" class="btn btn-primary btn-sm btn-block" @click="addItem(form.id_barang)" >Tambah</button>
           </div>
@@ -110,18 +60,23 @@
               <thead>
                 <tr>
                   <th>Barang</th>
-                  <th>Qty</th>
-                  <th>Satuan</th>
+                  <th>Satuan Kecil</th>
+                  <th>Satuan Besar</th>
+                  <th>Fraction</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
               <tbody class="barangTemporary">
                 <tr v-for="(datas, indx) in ListData" :key="indx">
                   <td>{{datas.nama_barang}}</td>
-                  <td>{{datas.qty}}</td>
-                  <td class="text-uppercase">{{datas.nama_satuan}}</td>
                   <td>
-                    <!-- <button class="btn btn-warning btn-sm" type="button" @click="EditList(datas[0])">daftar tag</button> -->
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputKecil[datas.id_barang]"> <strong class="text-uppercase">{{datas.nama_satuan_kecil}}</strong>
+                  </td>
+                  <td>
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputBesar[datas.id_barang]"> <strong class="text-uppercase">{{datas.nama_satuan_besar}}</strong>
+                  </td>
+                  <td>{{datas.fraction}}</td>
+                  <td>
                     <button class="btn btn-danger btn-sm" type="button" @click="HapusList(indx, datas.id_barang)">hapus list</button>
                   </td>
                 </tr>
@@ -143,126 +98,107 @@
 import DatePicker from 'vue2-datepicker';
 import 'vue2-datepicker/index.css';
 import 'vue-search-select/dist/VueSearchSelect.css'
-import { ModelSelect } from 'vue-search-select'
+import { ModelSelect, BasicSelect  } from 'vue-search-select'
 //you need to import the CSS manually (in case you want to override it)
 export default {
-  components: {DatePicker, ModelSelect },
+  components: {DatePicker, ModelSelect, BasicSelect  },
   data(){
     return{
-      selectedDate1: "",
       options: [],
       getBarang: [],
       getVendor: [],
       form:{
-        id_penerimaan: '',
         no_penerimaan: '',
         no_purchase_order: '',
         no_spk: '',
         tanggal: moment(new Date()).format('YYYY-M-D'),
         status_posting: '1',
-        nama_vendor: '',
+        id_vendor: '',
         id_barang: '',
-        id_satuan_barang_besar: 'Box',
-        id_satuan_barang_kecil: 'Pcs',
+        id_satuan_barang_besar: '',
+        nama_satuan_barang_besar: 'Box',
+        id_satuan_barang_kecil: '',
+        nama_satuan_barang_kecil: 'Box',
         id_satuan: '',
+        konversi:'',
         satuan:'',
         id_epc_tag: [],
+        qtylistkecil: [],
+        qtylistbesar: [],
         qty: '',
+        fraction: [],
+        id_barang_db: []
       },
       loading: false,
       ListData:[],
       listItem:[],
       listTag:[],
-      // time1:  moment(new Date()).format('YYYY-M-D'),
+      listSatuan:[],
+      qtyInputKecil:[],
+      qtyInputBesar:[],
+      nama_satuan:'',
+      jenis_satuan:[],
+      detail:[],
       waterMark : new Date().toISOString().slice(0,10),
-    }
-  },
-  props: {
-    value: {
-      type: String,
-      // default: moment().format('DD-MM-YYYY')
     }
   },
   created() {
     this.getListBrg();
-    this.loadData();
-    // var link = $('a.vsm--link.active').attr('href');
-    // if(link == '/penerimaan_barang'){
-      // $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
-    // }
-    // this.time1 = moment(new Date()).format('YYYY-M-D');
+    this.loadDataPenerimaan();
+  },
+  updated(){
+      $('a.vsm--link.active').attr('class', 'router-link-exact-active ryan active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
   },
   mounted() {
-      // this.time1 = moment(new Date()).format('YYYY-M-D');
-      this.$refs.datePicker.currentValue = [new Date()];
-      $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
+    this.$refs.datePicker.currentValue = [new Date()];
+    $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
  },
   methods: {
+    getIdBarang(id_barang) {
+      this.form.id_barang = id_barang;
+    },
     changeFormat() {
       this.form.no_purchase_order.toUpperCase();
-      // no_spk
     },
-    onChange(event) {
+    onSelect (items) {
+      $('.ui.fluid.search.selection.dropdown.barang').find('.text.default').remove();
+      $('.ui.fluid.search.selection.dropdown.barang').append('<div data-vss-custom-attr="" class="text default">'+items.text+'</div>');
+      
+      this.form.id_barang = items.value;
       this.loading = true
-      axios.post("penerimaan_barang/getDataListSatuan", {
-          id: this.form.id_barang,
-          tipe_satuan: event.target.value
+      axios.post("GetDataSatuan", {
+          id: items.value,
         })
           .then(response => {
-              this.form.satuan = event.target.value;
-              this.form.satuan == 'satuan_kecil' ? this.form.id_satuan_barang_kecil = response.data[0].nama_satuan : this.form.id_satuan_barang_besar = response.data[0].nama_satuan; 
-              this.form.id_satuan = response.data[0].id;
+            
+            this.form.fraction[items.value] = response.data.fraction;
+            var listItem = this.listItem;
+            console.info(listItem)
+
+            if($.inArray(this.form.id_barang, listItem) >= 0){
+              this.$swal('Maaf', 'Barang sudah masuk ke dalam list', 'error');
+
+            }else{
+              var data = response.data.list_data;
+              this.ListData[this.form.id_barang] = data;
+              
+              // remove null value of array
+              this.ListData = this.ListData.filter(function (el) {
+                return el != null && el != "";
+              });
+
+              listItem.push(this.form.id_barang);
+              this.qtyInputKecil[this.form.id_barang] = 1;
+              this.qtyInputBesar[this.form.id_barang] = 1;
+            }
+
           })
           .catch(errors => {
               console.log(errors);
           }).finally(() => {
               this.loading =  false
           });
-    },
-    //jumlah kuantitas
-    getNumbers:function(start,stop){
-      return new Array(stop-start).fill(start).map((n,i)=>n+i);
-    },
-    addItem(id_item) {
-      var barang = $('.barang').find('.menu').find('.item.selected').text();
-      var epc = this.form.id_epc_tag;
 
-      if ((id_item == '')){
-          this.$swal('Maaf', 'Silahkan pilih barang', 'error');
-          
-      }else {
-          this.listTag[id_item] = epc;
-
-          if(this.form.satuan == 'satuan_kecil'){
-            var satuan = this.form.id_satuan_barang_kecil;
-            this.info_satuan = this.form.id_satuan;
-          }else{
-            var satuan = this.form.id_satuan_barang_besar;
-            this.info_satuan = this.form.id_satuan;
-          }
-
-          var listItem = this.listItem;
-          if($.inArray(id_item, listItem) >= 0){
-            this.$swal('Maaf', 'Barang sudah masuk ke dalam list', 'error');
-
-          }else{
-            listItem.push(id_item);
-            this.ListData[id_item] = Array(id_item, barang, satuan, this.form.qty)
-            this.ListData[id_item] = {id_barang:id_item, nama_barang:barang, nama_satuan:satuan, id_satuan:this.info_satuan, qty:this.form.qty}
-            // remove null value of array
-            this.ListData = this.ListData.filter(function (el) {
-              return el != null && el != "";
-            });
-          }
-
-          console.log(this.ListData)
-          //reset inputan
-          this.form.id_barang = '';
-          this.form.satuan = '';
-          this.form.qty = '';
-          this.form.id_epc_tag = [];
-
-      }
     },
     EditList(a) {
       var input = "";
@@ -278,47 +214,51 @@ export default {
           })
     },
     HapusList(idx, id_item){
-      console.log(id_item)
-        axios
-          .post("penerimaan_barang/delete", {
-              id_penerimaan: this.form.id_penerimaan,  
-              id_barang: id_item,  
-          })
+      if(jQuery.inArray(id_item, this.id_barang_db) !== -1){
+         this.loading = true
+      axios.post("penerimaan_barang/deleteItemPenerimaan", {
+          id_barang: id_item,
+          id_penerimaan_barang: this.$route.params.id,
+        })
           .then(response => {
-              //remove from list data
-              this.listItem.splice(idx, 1);
-              // remove from list data table
-              this.ListData.splice(idx, 1);      
+            
+            this.form.fraction[items.value] = response.data.fraction;
+            var listItem = this.listItem;
+            console.info(listItem)
+
+            if($.inArray(this.form.id_barang, listItem) >= 0){
+              this.$swal('Maaf', 'Barang sudah masuk ke dalam list', 'error');
+
+            }else{
+              var data = response.data.list_data;
+              this.ListData[this.form.id_barang] = data;
+              
+              // remove null value of array
+              this.ListData = this.ListData.filter(function (el) {
+                return el != null && el != "";
+              });
+
+              listItem.push(this.form.id_barang);
+              this.qtyInputKecil[this.form.id_barang] = 1;
+              this.qtyInputBesar[this.form.id_barang] = 1;
+            }
 
           })
           .catch(errors => {
-              // this.$swal('Failed', 'You failed Created this file', 'error');
-              if (errors.response) {
-                  var data = '';
-                  $.each(errors.response.data.errors, function(k,v){
-                    data += v[0]+"\n";
-                  });
-                  this.$swal('Gagal', data, 'error');
-                // client received an error response (5xx, 4xx)
-              } else if (errors.request) {
-                  console.log(errors.request);
-                  console.log("request never left")
-                // client never received a response, or request never left
-              } else {
-                console.log("lainnya")
-              }
-  
+              console.log(errors);
           }).finally(() => {
               this.loading =  false
           });
-
+      }
+      
+      //remove from list data
+      this.listItem.splice(idx, 1);
+      // remove from list data table
+      this.ListData.splice(idx, 1);      
     },
-    defaultValue(){
-      // this.form.tanggal =  moment(new Date()).format('YYYY-M-D')
-    },    
     getListBrg() {
       this.loading = true
-      axios.get('penerimaan_barang/getDataListBarang')
+      axios.get('MasterData')
             .then(response => {
                 this.getBarang = response.data.data;
                 this.getVendor = response.data.vendor;
@@ -342,17 +282,35 @@ export default {
       {
         this.$swal('Maaf', 'Sepertinya ada inputan yang belum diisi.', 'error');
       }else{
+        // remove null value of array
+        var qtyInputKecilx = this.qtyInputKecil.filter(function (el) {
+          return el != null && el != "";
+        });
+        // remove null value of array
+        var qtyInputBesarx = this.qtyInputBesar.filter(function (el) {
+          return el != null && el != "";
+        });
+
+        var besar = this.qtyInputBesar;
+        var kecil = this.qtyInputKecil;
+
+        var x = Array();
+        $.each(this.ListData, function (k, v) {
+          console.log(k);
+            x[k] = {"id_barang": v.id_barang, "id_satuan_barang_besar": v.id_satuan_besar, "id_satuan_barang_kecil": v.id_satuan_kecil, "qty_besar":besar[v.id_barang], "qty_kecil":kecil[v.id_barang]}
+        });  
+
+        this.detail = x;
         // post data ke api menggunakan axios
-        // this.loading = true
-        axios
-          .post("penerimaan_barang/create", {
+        this.loading = true
+        axios.post("penerimaan_barang/"+ this.$route.params.id +"/update", {
               no_penerimaan: this.form.no_penerimaan,  
               no_purchase_order: this.form.no_purchase_order,  
               no_spk: this.form.no_spk,  
               tanggal: this.form.tanggal,  
               status_posting: this.form.status_posting,  
               id_vendor: this.form.id_vendor,  
-              list_data:this.ListData
+              list_data:this.detail,
           })
           .then(response => {
             // push router ke read data
@@ -381,28 +339,61 @@ export default {
           });
       }
     },
-    loadData() {
-       this.loading =  true;
-      // put data ke api menggunakan axios
-      axios
-        .get("penerimaan_barang/" + this.$route.params.id+ "/edit")
-        .then(response => {
-          this.form.id_penerimaan = response.data.data.id;
-          this.form.no_penerimaan = response.data.data.no_penerimaan;
-          this.form.no_purchase_order = response.data.data.no_purchase_order;
-          this.form.no_spk = response.data.data.no_spk;
-          this.form.tanggal = response.data.data.created_at;
-          this.form.status_posting = response.data.data.status_posting;
-          this.form.nama_vendor = response.data.data.nama_vendor;
-          this.ListData = response.data.detail;
-          this.listItem = response.data.id_barang;
-        })
-        .catch(errors => {
-            
+    loadDataPenerimaan() {
+      this.loading = true
+      // load data berdasarkan id
+      axios.get("penerimaan_barang/" + this.$route.params.id +"/update")
+        .then(response => {          
+            // form main
+            this.form.no_penerimaan = response.data.data.no_penerimaan
+            this.form.no_purchase_order = response.data.data.no_purchase_order
+            this.form.no_spk = response.data.data.no_spk
+            this.form.tanggal = response.data.data.tanggal
+            this.form.status_posting = response.data.data.status_posting
+            this.form.id_vendor = response.data.data.id_vendor
+
+            //form detail
+            this.ListData = response.data.detail;
+            var inputKecil = Array();
+            var inputBesar = Array();
+            var fraction = Array();
+            var idBrgDB = Array();
+            var listItem = this.listItem;
+
+            $.each(response.data.qty, function(k,v){
+              inputKecil[k] =  v;
+              inputBesar[k] =  Math.ceil(parseInt(v)/ parseInt(response.data.id_barang[k]));
+              fraction[k] =  response.data.id_barang[k];
+              //validasi utk hapus ke db 
+              idBrgDB[k] = k;
+              //validasi jika item sudah di tambahakan kedalam list 
+              listItem.push(k);
+            });
+
+            console.log(this.ListData)
+            this.id_barang_db = idBrgDB;
+            this.qtyInputKecil = inputKecil;
+            this.qtyInputBesar = inputBesar;
+            this.form.fraction = fraction;
+
         }).finally(() => {
             this.loading =  false
         });
-    }
+    },
+
+
+  },
+  watch : {
+      qtyInputKecil:function(val) {
+        this.qtyInputKecil = val;
+        var x = this.qtyInputKecil[this.form.id_barang]/ parseInt(this.form.fraction[this.form.id_barang]);
+        this.qtyInputBesar[this.form.id_barang] = Math.ceil(x);
+      },
+      qtyInputBesar : function (val) {
+        this.qtyInputBesar = val;
+        var x = this.qtyInputBesar[this.form.id_barang]* parseInt(this.form.fraction[this.form.id_barang]);
+        this.qtyInputKecil[this.form.id_barang] = Math.ceil(x);
+      }
   }
-};
+}
 </script>

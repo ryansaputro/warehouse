@@ -62,6 +62,7 @@
                   <th>Barang</th>
                   <th>Satuan Kecil</th>
                   <th>Satuan Besar</th>
+                  <th>Fraction</th>
                   <th>Aksi</th>
                 </tr>
               </thead>
@@ -69,11 +70,12 @@
                 <tr v-for="(datas, indx) in ListData" :key="indx">
                   <td>{{datas.nama_barang}}</td>
                   <td>
-                      <input type="number" class="form-control" v-bind:readonly="jenis_satuan[datas.id_barang] == 0" style="display: inline-grid;width: 50%;"  @input="changeListQty(datas.id_barang)" v-model="qtyInputKecil"> {{datas.nama_satuan_kecil}}
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputKecil[datas.id_barang]"> <strong>{{datas.nama_satuan_kecil}}</strong>
                   </td>
                   <td>
-                      <input type="number" class="form-control" v-bind:readonly="jenis_satuan[datas.id_barang] == 1" style="display: inline-grid;width: 50%;"   v-model="qtyInputBesar"> {{datas.nama_satuan_besar}}
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputBesar[datas.id_barang]"> <strong>{{datas.nama_satuan_besar}}</strong>
                   </td>
+                  <td>{{datas.fraction}}</td>
                   <td>
                     <button class="btn btn-danger btn-sm" type="button" @click="HapusList(indx, datas[0])">hapus list</button>
                   </td>
@@ -102,7 +104,6 @@ export default {
   components: {DatePicker, ModelSelect, BasicSelect  },
   data(){
     return{
-      selectedDate1: "",
       options: [],
       getBarang: [],
       getVendor: [],
@@ -125,26 +126,35 @@ export default {
         qtylistkecil: [],
         qtylistbesar: [],
         qty: '',
-        fraction: '',
+        fraction: [],
       },
       loading: false,
       ListData:[],
       listItem:[],
       listTag:[],
       listSatuan:[],
+      qtyInputKecil:[],
+      qtyInputBesar:[],
       nama_satuan:'',
       jenis_satuan:[],
+      detail:[],
       waterMark : new Date().toISOString().slice(0,10),
     }
   },
   created() {
     this.getListBrg();
   },
+  updated(){
+    $('a.vsm--link.active').attr('class', 'router-link-exact-active ryan active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
+ },
   mounted() {
       this.$refs.datePicker.currentValue = [new Date()];
       $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
  },
   methods: {
+    getIdBarang(id_barang) {
+      this.form.id_barang = id_barang;
+    },
     changeFormat() {
       this.form.no_purchase_order.toUpperCase();
     },
@@ -158,9 +168,26 @@ export default {
           id: items.value,
         })
           .then(response => {
-            // console.log(response.data);
-            this.listSatuan = response.data.satuan;
-            this.form.fraction = response.data.fraction;
+            
+            this.form.fraction[items.value] = response.data.fraction;
+            var listItem = this.listItem;
+
+            if($.inArray(this.form.id_barang, listItem) >= 0){
+              this.$swal('Maaf', 'Barang sudah masuk ke dalam list', 'error');
+
+            }else{
+              var data = response.data.list_data;
+              this.ListData[this.form.id_barang] = data;
+              
+              // remove null value of array
+              this.ListData = this.ListData.filter(function (el) {
+                return el != null && el != "";
+              });
+
+              listItem.push(this.form.id_barang);
+              this.qtyInputKecil[this.form.id_barang] = 1;
+              this.qtyInputBesar[this.form.id_barang] = 1;
+            }
 
           })
           .catch(errors => {
@@ -169,51 +196,6 @@ export default {
               this.loading =  false
           });
 
-      },
-    //jumlah kuantitas
-    getNumbers:function(start,stop){
-      return new Array(stop-start).fill(start).map((n,i)=>n+i);
-    },
-    addItem(id_item) {
-      var barang = $('.barang').find('.menu').find('.item.selected').text();
-      var epc = this.form.id_epc_tag;
-
-      if ((id_item == '')){
-          this.$swal('Maaf', 'Silahkan pilih barang', 'error');
-          
-      }else {
-          this.listTag[id_item] = epc;
-
-          var listItem = this.listItem;
-          if($.inArray(id_item, listItem) >= 0){
-            this.$swal('Maaf', 'Barang sudah masuk ke dalam list', 'error');
-
-          }else{
-            listItem.push(id_item);
-            // this.ListData[id_item] = Array(id_item, barang, this.nama_satuan, this.form.qty)
-            this.ListData[id_item] = {id_barang:id_item, 
-                                      nama_barang:barang, 
-                                      id_satuan_besar:this.form.id_satuan_barang_besar, 
-                                      nama_satuan_besar:this.form.nama_satuan_barang_besar, 
-                                      id_satuan_kecil:this.form.id_satuan_barang_kecil, 
-                                      nama_satuan_kecil:this.form.nama_satuan_barang_kecil, 
-                                      qty_konversi:this.form.konversi,
-                                      qty:this.form.qty}
-            // remove null value of array
-            this.ListData = this.ListData.filter(function (el) {
-              return el != null && el != "";
-            });
-          }
-          $('.ui.fluid.search.selection.dropdown.barang').find('.text.default').remove();
-          $('.ui.fluid.search.selection.dropdown.barang').append('<div data-vss-custom-attr="" class="text default">barang</div>');
-          this.listSatuan = [];
-          //reset inputan
-          // this.form.id_barang = '';
-          this.form.satuan = '';
-          // this.form.qty = '';
-          this.form.id_epc_tag = [];
-
-      }
     },
     EditList(a) {
       var input = "";
@@ -260,8 +242,23 @@ export default {
       {
         this.$swal('Maaf', 'Sepertinya ada inputan yang belum diisi.', 'error');
       }else{
+        // remove null value of array
+        var qtyInputKecilx = this.qtyInputKecil.filter(function (el) {
+          return el != null && el != "";
+        });
+        // remove null value of array
+        var qtyInputBesarx = this.qtyInputBesar.filter(function (el) {
+          return el != null && el != "";
+        });
+
+        var x = Array();
+        $.each(this.ListData, function (k, v) {
+            x[k] = {"id_barang": v.id_barang, "id_satuan_barang_besar": v.id_satuan_besar, "id_satuan_barang_kecil": v.id_satuan_kecil, "qty_besar":qtyInputBesarx[k], "qty_kecil":qtyInputKecilx[k]}
+        });  
+       
+        this.detail = x;
         // post data ke api menggunakan axios
-        // this.loading = true
+        this.loading = true
         axios
           .post("penerimaan_barang/create", {
               no_penerimaan: this.form.no_penerimaan,  
@@ -270,7 +267,7 @@ export default {
               tanggal: this.form.tanggal,  
               status_posting: this.form.status_posting,  
               id_vendor: this.form.id_vendor,  
-              list_data:this.ListData
+              list_data:this.detail
           })
           .then(response => {
             // push router ke read data
@@ -301,85 +298,18 @@ export default {
     },
   },
   computed: {
-    listDataWithInputChange: {
-      get(){
-        // this.form.qty = '';
-        // this.form.konversi=''
-        return this.ListData.filter((t) => {
-          if(parseInt(t.qty) > t.qty_konversi){
-            this.jenis_satuan[t.id_barang] = "kecil";
-            this.form.qtylistkecil[t.id_barang] = t.qty;
-            this.form.qtylistbesar[t.id_barang] = t.qty_konversi;
-          }else{
-            this.jenis_satuan[t.id_barang] = "besar";
-            this.form.qtylistkecil[t.id_barang] = t.qty_konversi;
-            this.form.qtylistbesar[t.id_barang] = t.qty;
-          }
-
-          // console.log(this.form.qtylistkecil)
-          // console.log(this.form.qtylistbesar)
-          return t; 
-        });
+  },
+  watch : {
+      qtyInputKecil:function(val) {
+        this.qtyInputKecil = val;
+        var x = this.qtyInputKecil[this.form.id_barang]/ parseInt(this.form.fraction[this.form.id_barang]);
+        this.qtyInputBesar[this.form.id_barang] = Math.ceil(x);
       },
-      set(newValue){
-          // this.form.qty = newValue;
-          console.log("values "+ this.form.qtylistkecil)
-           this.ListData.filter((t) => {
-          if(parseInt(t.qty) > t.qty_konversi){
-            this.jenis_satuan[t.id_barang] = "kecil";
-            this.form.qtylistkecil[t.id_barang] = newValue;
-            this.form.qtylistbesar[t.id_barang] = t.qty_konversi;
-          }else{
-            this.jenis_satuan[t.id_barang] = "besar";
-            this.form.qtylistkecil[t.id_barang] = t.qty_konversi;
-            this.form.qtylistbesar[t.id_barang] = newValue;
-          }
-
-          console.log(this.form.qtylistkecil)
-          console.log(this.form.qtylistbesar)
-        //   return t; 
-        });
+      qtyInputBesar : function (val) {
+        this.qtyInputBesar = val;
+        var x = this.qtyInputBesar[this.form.id_barang]* parseInt(this.form.fraction[this.form.id_barang]);
+        this.qtyInputKecil[this.form.id_barang] = Math.ceil(x);
       }
-
-    },
-    qtyInputKecil: {
-      get(){
-        console.log("satuan kecil "+this.jenis_satuan[this.form.id_barang]);
-        console.log(this.form.qty)
-        if(this.jenis_satuan[this.form.id_barang] == 0){
-          this.form.qtylistkecil[this.form.id_barang] = this.form.qty;
-          this.form.qtylistbesar[this.form.id_barang] = this.form.konversi;
-        }else{
-          this.form.qtylistkecil[this.form.id_barang] = this.form.konversi;
-          this.form.qtylistbesar[this.form.id_barang] = this.form.qty;
-        }
-        return this.form.qtylistkecil[this.form.id_barang];
-      },
-      set(newValue){
-        this.form.qtylistkecil[this.form.id_barang] = newValue;
-          // this.value.second = newValue;
-      }
-    },
-    
-    qtyInputBesar: {
-      get(){
-
-        if(this.jenis_satuan[this.form.id_barang] == 1){
-          this.form.qtylistkecil[this.form.id_barang] = this.form.konversi;
-          this.form.qtylistbesar[this.form.id_barang] = this.form.qty;
-        }else{
-          this.form.qtylistbesar[this.form.id_barang] = this.form.konversi;
-          this.form.qtylistkecil[this.form.id_barang] = this.form.qty;
-        }
-        
-        return this.form.qtylistbesar[this.form.id_barang];
-      },
-      set(newValue){
-        this.form.qtylistbesar[this.form.id_barang] = newValue;
-          // this.value.second = newValue;
-      }
-    },
-
   }
 };
 </script>

@@ -68,6 +68,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/create','PenerimaanBarangController@store');
         Route::get('/index','PenerimaanBarangController@index');
         Route::get('/{id}/update','PenerimaanBarangController@show');
+        Route::post('/{id}/update','PenerimaanBarangController@update');
         Route::post('/deleteItemPenerimaan','PenerimaanBarangController@deleteItemPenerimaan');
         Route::post('/deletePenerimaan','PenerimaanBarangController@deletePenerimaan');
     });

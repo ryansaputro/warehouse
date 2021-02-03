@@ -67,7 +67,7 @@ class GeneralController extends Controller
     public function GetDataSatuan(Request $request)
     {
         $satuan_barang_kecil = DB::table('barang')
-                        ->select('barang_satuan.id', DB::raw('UPPER(nama_satuan) AS nama_satuan'), 'fraction', 
+                        ->select('barang.nama_barang', 'barang_satuan.id', DB::raw('UPPER(nama_satuan) AS nama_satuan'), 'fraction', 
                         DB::raw('IF(id_satuan_barang_kecil = barang_satuan.id, "kecil", "besar") AS jenis')
                         )
                         ->join('barang_satuan', function($join){
@@ -92,8 +92,15 @@ class GeneralController extends Controller
 
         $all_satuan = array_merge($satuan_barang_kecil,$satuan_barang_besar);
         $fraction = (Int)$satuan_barang_kecil[0]->fraction;
+        
+        $data = array("id_barang" => $request->id, "nama_barang" => $satuan_barang_kecil[0]->nama_barang, 
+                        "id_satuan_kecil" => $satuan_barang_kecil[0]->id, 
+                        "nama_satuan_kecil" => $satuan_barang_kecil[0]->nama_satuan, 
+                        "id_satuan_besar" => $satuan_barang_besar[0]->id, 
+                        "nama_satuan_besar" => $satuan_barang_besar[0]->nama_satuan,
+                        "fraction" => $fraction);        
 
-        return ['satuan' =>$all_satuan, 'fraction' => $fraction,  'status' => 200];
+        return ['satuan' =>$all_satuan, 'fraction' => $fraction, 'list_data' => $data,  'status' => 200];
     }
     // mengambil data vendor, no penerimaan, data barang
     public function GetInfoStok()

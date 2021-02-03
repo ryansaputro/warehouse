@@ -98,15 +98,25 @@ class PenerimaanBarangController extends Controller
                     ->select('penerimaan_barang.*', 'nama_vendor')
                     ->join('vendor', 'vendor.id', '=', 'penerimaan_barang.id_vendor')
                     ->where('no_penerimaan', $id)->first();
-        $detail = DB::table('penerimaan_barang_detail')
-                    ->select('id_barang', 'nama_barang', 'qty', 'nama_satuan')
-                    ->join('barang', 'barang.id', '=', 'penerimaan_barang_detail.id_barang')
-                    ->join('barang_satuan', 'barang_satuan.id', '=', 'penerimaan_barang_detail.id_satuan_barang_besar')
-                    ->where('penerimaan_barang_detail.id_penerimaan_barang', $data->id)
-                    ->get();
-        $id_barang = $detail->pluck('id_barang')->toArray();
 
-        return ['data' => $data, 'detail' => $detail, 'id_barang' => $id_barang, 'status' => 200];
+//                     id_barang: "2"
+// id_satuan_barang_besar: "3"
+// id_satuan_barang_kecil: "4"
+// qty_besar: 13
+// qty_kecil: "123"
+        $detail = DB::table('penerimaan_barang_detail')
+                    ->select('id_barang', 'nama_barang', 'qty AS qty_kecil', 'besar.nama_satuan AS nama_satuan_besar', 'kecil.nama_satuan AS nama_satuan_kecil', 'barang.fraction', 'besar.id AS id_satuan_besar', 'kecil.id AS id_satuan_kecil')
+                    ->join('barang', 'barang.id', '=', 'penerimaan_barang_detail.id_barang')
+                    ->join('barang_satuan AS kecil', 'kecil.id', '=', 'penerimaan_barang_detail.id_satuan_barang_kecil')
+                    ->join('barang_satuan AS besar', 'besar.id', '=', 'penerimaan_barang_detail.id_satuan_barang_besar')
+                    ->where('penerimaan_barang_detail.id_penerimaan_barang', $data->id)
+                    ->orderBy('penerimaan_barang_detail.id_barang', 'ASC')
+                    ->get();
+        
+        $qty = $detail->pluck('qty_kecil', 'id_barang')->toArray();
+        $id_barang = $detail->pluck('fraction', 'id_barang')->toArray();
+
+        return ['data' => $data, 'detail' => $detail, 'id_barang' => $id_barang, 'qty' => $qty, 'status' => 200];
     }
 
     // menambah data
@@ -143,7 +153,7 @@ class PenerimaanBarangController extends Controller
                 'no_spk' => $request->no_spk,
                 'tgl_penerimaan'  => $request->tanggal,
                 'id_user' => Auth::user()->id,
-                'status_posting' => $request->status_posting,
+                'status_posting' => '1',
                 'id_vendor' => $request->id_vendor,
             ]);
 
@@ -151,9 +161,9 @@ class PenerimaanBarangController extends Controller
                 $detail = PenerimaanBarangDetail::create([
                     'id_penerimaan_barang' => $data->id, 
                     'id_barang' => $v['id_barang'], 
-                    'id_satuan_barang_besar' => $v['id_satuan'], 
-                    'id_satuan_barang_kecil' => $v['id_satuan'], 
-                    'qty' => $v['qty'], 
+                    'id_satuan_barang_besar' => $v['id_satuan_barang_besar'], 
+                    'id_satuan_barang_kecil' => $v['id_satuan_barang_kecil'], 
+                    'qty' => $v['qty_kecil'], 
                 ]);
             }
         } catch (\Illuminate\Database\QueryException $ex) {
@@ -168,14 +178,18 @@ class PenerimaanBarangController extends Controller
     // mengubah data
     public function update($id, Request $request)
     {
-        $data = DB::table('divisi')->where('id', $id)->first();
         //validate the data before processing
+        $data = PenerimaanBarang::where('no_penerimaan', $id)->first();
         $rules = [
-            "nama_divisi"=> "required|unique:divisi,nama_divisi,".$data->nama_divisi.',nama_divisi',
-            "deskripsi" => "required|",
-            "status" => "required|",
+            "no_penerimaan"=> "required|unique:penerimaan_barang,no_penerimaan,".$data->no_penerimaan.',no_penerimaan',
+            "no_purchase_order" => "required|",
+            "no_spk" => "required|",
+            "status_posting" => "required|",
+            "id_vendor" => "required|",
+            'list_data' => "array|required"
         ];
 
+        
         $customMessages = [
             'required' => 'Isian :attribute tidak boleh kosong.',
             'numeric' => 'Isian :attribute harus berupa angka.',
@@ -183,16 +197,34 @@ class PenerimaanBarangController extends Controller
             'digits' => 'Isian :attribute harus berupa angka dengan 5 karakter.',
             'size' => 'Isian :attribute harus 3 karakter.'
         ];
-
+        
         $this->validate($request, $rules, $customMessages);
+
         DB::beginTransaction();
         try {
+            
             //proses menyimpan data ke database...
-            $data = DB::table('divisi')->where('id',$id)->update([
-                'nama_divisi'  => $request->nama_divisi,
-                'deskripsi' => $request->deskripsi,
-                'status' => $request->status,
+            $update = $data->update([
+                'no_penerimaan'  => $request->no_penerimaan,
+                'no_purchase_order' => $request->no_purchase_order,
+                'no_spk' => $request->no_spk,
+                'id_user' => Auth::user()->id,
+                'status_posting' => '1',
+                'id_vendor' => $request->id_vendor,
             ]);
+
+            
+
+            foreach((array)$request->list_data AS $k => $v){
+                $detail = PenerimaanBarangDetail::where('id_penerimaan_barang', $data->id)->updateOrCreate([
+                    'id_penerimaan_barang' => $data->id, 
+                    'id_barang' => $v['id_barang']
+                ],[ 
+                    'id_satuan_barang_besar' => $v['id_satuan_barang_besar'], 
+                    'id_satuan_barang_kecil' => $v['id_satuan_barang_kecil'], 
+                    'qty' => $v['qty_kecil'], 
+                ]);
+            }
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
             DB::rollback();
@@ -206,34 +238,41 @@ class PenerimaanBarangController extends Controller
     public function deleteItemPenerimaan(Request $request)
     {
         
+        $data = DB::table('penerimaan_barang')->where('no_penerimaan', $request->id_penerimaan_barang)->first();
+        
         DB::beginTransaction();
         try {
             $data = DB::table('penerimaan_barang_detail')
-                    ->where('id_penerimaan_barang', $request->id_penerimaan)
+                    ->where('id_penerimaan_barang', $data->id)
                     ->where('id_barang', $request->id_barang)
                     ->delete();
-        } catch (\Throwable $th) {
-            //throw $th;
+        } catch (\Illuminate\Database\QueryException $ex) {
+            DB::rollback();
+            return response()->json(['status' => 'failed', 'message' => $ex->getMessage()], 500);
         }
-        return response()->json(['status' => 'success']);
+        DB::commit();
+        return response()->json(['status' => 'success'], 200);
     }
 
  // menghapus data
     public function deletePenerimaan(Request $request)
     {
-        
+        $data = DB::table('penerimaan_barang')->where('no_penerimaan', $request->no_penerimaan)->first();
+         
         DB::beginTransaction();
         try {
-            $data = DB::table('pengeluaran_barang')
-                    ->where('id', $request->id_penerimaan)
+            
+            $detail = DB::table('penerimaan_barang_detail')
+                    ->where('id_penerimaan_barang', $data->id)
+                    ->get();
+            $data = DB::table('penerimaan_barang')
+                    ->where('id', $data->id)
                     ->delete();
 
-            $detail = DB::table('pengeluaran_barang_detail')
-                    ->where('id_pengeluaran', $request->id_penerimaan)
-                    ->delete();
-
-        } catch (\Throwable $th) {
-            //throw $th;
+        } catch (\Illuminate\Database\QueryException $ex) {
+            DB::rollback();
+            return response()->json(['status' => 'failed', 'message' => $ex->getMessage()], 500);
         }
-        return response()->json(['status' => 'success']);
+        DB::commit();
+        return response()->json(['status' => 'success'], 200);
     }}

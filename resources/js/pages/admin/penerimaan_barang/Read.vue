@@ -7,17 +7,34 @@
                     :columns="columns" 
                     :config="config"
                     :actions="actions"
+                    v-if="$can('read-divisi')"
                     @on-newdata="newData">
 
                     <template slot="status-slot" slot-scope="props">
                         <span class="badge badge-success" v-if="props.row.status_posting == '1'">Aktif</span>
                         <span class="badge badge-danger" v-else>Tidak Aktif</span>
                     </template>
-                    <template slot="action-slot" slot-scope="props">
+                    <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
+                        <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)">Edit</button>
+                        <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)">Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)">Delete</button>
+                    </template>
+                </vue-bootstrap4-table>
+                <!--   -->
+                <vue-bootstrap4-table 
+                    :rows="rows" 
+                    :columns="columns" 
+                    :config="config"
+                    v-else>
+                    <template slot="status-slot" slot-scope="props">
+                        <span class="badge badge-success" v-if="props.row.status_posting == '1'">Aktif</span>
+                        <span class="badge badge-danger" v-else>Tidak Aktif</span>
+                    </template>
+                    <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
                         <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)">Edit</button>
                         <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)">Edit</button>
 
-                        <!-- <button type="button" class="btn btn-danger btn-sm" @click="onDelete(props.row)">Delete</button> -->
+                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)">Delete</button>
                     </template>
                 </vue-bootstrap4-table>
           </div>
@@ -72,6 +89,19 @@ export default {
                 //  server_mode: true, //
                  card_mode: true,
                  selected_rows_info:true,
+                 global_search: {
+                        placeholder: "Pencarian...",
+                        visibility: true,
+                        case_sensitive: false,
+                        showClearButton: false,
+                        searchOnPressEnter: false,
+                        searchDebounceRate: 500,
+                        init: {
+                            value : moment(new Date()).format('YYYY-MM-DD')
+                        }                        
+                    },
+                    show_refresh_button: false, 
+                    show_reset_button: false, 
             },
             actions: [
                 {
@@ -89,15 +119,39 @@ export default {
     methods: {
         onNoEdit(row) {
             this.$swal('Maaf', 'Tidak dapat meng-edit <br>No Penerimaan: <b>'+row.no_penerimaan+'</b> dikarenakan telah diposting', 'error');
-            console.log(row);
         },
         onEdit(row) {
             this.$router.push("/penerimaan_barang/"+row.no_penerimaan+"/edit");
-            console.log(row);
         },
         onDelete(row) {
-            alert("on delete clicked");
-            console.log(row);
+            axios.post("penerimaan_barang/deletePenerimaan", {
+              no_penerimaan: row.no_penerimaan,  
+            })
+            .then(response => {
+                this.getProjects();
+                // push router ke read data
+                this.$swal('Berhasil', 'Penerimaan Barang berhasil dihapus', 'success');
+            })
+            .catch(errors => {
+                // this.$swal('Failed', 'You failed Created this file', 'error');
+                if (errors.response) {
+                    var data = '';
+                    $.each(errors.response.data.errors, function(k,v){
+                        data += v[0]+"\n";
+                    });
+                    this.$swal('Gagal', data, 'error');
+                    // client received an error response (5xx, 4xx)
+                } else if (errors.request) {
+                    console.log(errors.request);
+                    console.log("request never left")
+                    // client never received a response, or request never left
+                } else {
+                    console.log("lainnya")
+                }
+    
+            }).finally(() => {
+                this.loading =  false
+            });
         },  
 
         doMath: function (index) {
@@ -111,24 +165,12 @@ export default {
             axios.get('penerimaan_barang/index')
                 .then(response => {
                     this.rows = response.data.data;
-                    console.log(this.rows)
                 })
                 .catch(errors => {
                     console.log(errors);
                 }).finally(() => {
                     this.loading =  false
                 });
-        },
-        deleteData(id) {
-        // delete data
-        this.loading = true
-          axios.delete("data-kehadiran/" + id).then(response => {
-            this.getProjects();
-            // $swal function calls SweetAlert into the application with the specified configuration.
-            this.$swal('Deleted', 'You successfully deleted this file', 'success');
-          }).finally(() => {
-            this.loading =  false
-          });
         },
 
     },
