@@ -282,21 +282,12 @@ export default {
       {
         this.$swal('Maaf', 'Sepertinya ada inputan yang belum diisi.', 'error');
       }else{
-        // remove null value of array
-        var qtyInputKecilx = this.qtyInputKecil.filter(function (el) {
-          return el != null && el != "";
-        });
-        // remove null value of array
-        var qtyInputBesarx = this.qtyInputBesar.filter(function (el) {
-          return el != null && el != "";
-        });
 
         var besar = this.qtyInputBesar;
         var kecil = this.qtyInputKecil;
 
         var x = Array();
         $.each(this.ListData, function (k, v) {
-          console.log(k);
             x[k] = {"id_barang": v.id_barang, "id_satuan_barang_besar": v.id_satuan_besar, "id_satuan_barang_kecil": v.id_satuan_kecil, "qty_besar":besar[v.id_barang], "qty_kecil":kecil[v.id_barang]}
         });  
 
