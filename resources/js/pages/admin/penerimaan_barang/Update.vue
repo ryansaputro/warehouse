@@ -84,7 +84,7 @@
             </table>
                 <div class="form-group">
                   <router-link class="btn btn-danger" to="/penerimaan_barang">Kembali</router-link>
-                  <button class="btn btn-primary" v-if="ListData.length > 0">Simpan</button>
+                  <button class="btn btn-primary" v-if="ListData.length > 0">Perbarui</button>
                 </div>
 
           </div>
@@ -361,13 +361,29 @@ export default {
               listItem.push(k);
             });
 
-            console.log(this.ListData)
             this.id_barang_db = idBrgDB;
             this.qtyInputKecil = inputKecil;
             this.qtyInputBesar = inputBesar;
             this.form.fraction = fraction;
 
-        }).finally(() => {
+        }).catch(errors => {
+              if (errors.response) {
+                  this.$swal({
+                      title: "Opps",
+                      text: "Data tidak tersedia atau telah diposting",
+                      type: "error"
+                  }).then(function() {
+                      window.location = "/penerimaan_barang";
+                  });
+                // client received an error response (5xx, 4xx)
+              } else if (errors.request) {
+                  console.log(errors.request);
+                  console.log("request never left")
+                // client never received a response, or request never left
+              } else {
+                console.log("lainnya")
+              }
+          }).finally(() => {
             this.loading =  false
         });
     },

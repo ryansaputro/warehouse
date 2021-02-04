@@ -11,13 +11,14 @@
                     @on-newdata="newData">
 
                     <template slot="status-slot" slot-scope="props">
-                        <span class="badge badge-success" v-if="props.row.status_posting == '1'">Aktif</span>
-                        <span class="badge badge-danger" v-else>Tidak Aktif</span>
+                        <span class="badge badge-success" v-if="props.row.status_posting == '1'">Belum diposting</span>
+                        <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
-                        <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)">Edit</button>
-                        <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)">Edit</button>
-                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)">Delete</button>
+                        <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
+                        <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
+                        <button type="button" class="btn btn-info btn-sm" v-if="props.row.status_posting == '1'" @click="onPosting(props.row)" v-tooltip="'Posting dapat dilakukan jika tag pada item sudah terisi semua.'"><i class="fa fa-send" aria-hidden="true"></i> Posting</button>
                     </template>
                 </vue-bootstrap4-table>
                 <!--   -->
@@ -27,14 +28,14 @@
                     :config="config"
                     v-else>
                     <template slot="status-slot" slot-scope="props">
-                        <span class="badge badge-success" v-if="props.row.status_posting == '1'">Aktif</span>
-                        <span class="badge badge-danger" v-else>Tidak Aktif</span>
+                        <span class="badge badge-success" v-if="props.row.status_posting == '1'">Belum diposting</span>
+                        <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
-                        <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)">Edit</button>
-                        <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)">Edit</button>
-
-                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)">Delete</button>
+                        <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
+                        <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
+                        <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
+                        <button type="button" class="btn btn-info btn-sm" v-if="props.row.status_posting == '1'" @click="onPosting(props.row)" v-tooltip="'Posting dapat dilakukan jika tag pada item sudah terisi semua.'"><i class="fa fa-send" aria-hidden="true"></i> Posting</button>
                     </template>
                 </vue-bootstrap4-table>
           </div>
@@ -154,6 +155,47 @@ export default {
             });
         },  
 
+        onPosting(row) {
+            axios.post("penerimaan_barang/cekposting", {
+              no_penerimaan: row.no_penerimaan,  
+            })
+            .then(response => {
+                if(response.data.status == 200){
+                    this.$router.push("/penerimaan_barang/"+row.no_penerimaan+"/posting");
+                }else{
+                    this.$swal({
+                      title: "Opps",
+                      text: "Data tidak tersedia atau telah diposting",
+                      type: "error"
+                    }).then(function() {
+                        window.location = "/penerimaan_barang";
+                    });
+                }
+            })
+            .catch(errors => {
+                // this.$swal('Failed', 'You failed Created this file', 'error');
+                if (errors.response) {
+                    this.$swal({
+                      title: "Opps",
+                      text: "Maaf data item belum lengkap silahkan cek data tag pada item",
+                      type: "error"
+                    }).then(function() {
+                        this.getProjects();
+                    });
+                    // client received an error response (5xx, 4xx)
+                } else if (errors.request) {
+                    
+                    console.log(errors.request);
+                    console.log("request never left")
+                    // client never received a response, or request never left
+                } else {
+                    console.log("lainnya")
+                }
+    
+            }).finally(() => {
+                this.loading =  false
+            });
+        },  
         doMath: function (index) {
             return index+1
         },

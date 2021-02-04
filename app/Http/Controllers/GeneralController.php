@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Ixudra\Curl\Facades\Curl;
 use DB;
+use App\Stok;
 
 class GeneralController extends Controller
 {
@@ -121,22 +122,33 @@ class GeneralController extends Controller
     {
         DB::beginTransaction();
         try {
-            $request->status = "pengeluaran";
-            $request->qty = 100;
-            $request->id_barang = 1;
-            // satuan yg masuk ke stock satuan terkecil
-            $list_barang = DB::table('stok_barang')->where('id_barang', $request->id_barang);
-            
-            //cek jika status dikeluarin 
-            if($request->status = "pengeluaran"){
-                $list_barang->update([
-                    'qty' => DB::raw('qty-'.$request->qty)
-                ]);            
-            }else{
-                $list_barang->update([
-                    'qty' => DB::raw('qty+'.$request->qty)
-                ]); 
+
+            if(isset($request->no_penerimaan)){
+                $data = DB::table('penerimaan_barang')->where('no_penerimaan', $request->no_penerimaan)->update(['status_posting' => '0']);
             }
+            //cek jika status dikeluarin 
+            if($request->status == "pengeluaran"){
+                foreach($request->list_data AS $k => $v){
+                    // satuan yg masuk ke stock satuan terkecil
+                    $list_barang = Stok::updateOrCreate([
+                        'id_barang' => $v['id_barang'],
+                        'id_gudang' => $v['id_gudang'],
+                    ],[
+                        'qty' => DB::raw('qty-'.$v['qty'])
+                    ]);            
+                }
+            }else{
+                foreach($request->list_data AS $k => $v){
+                    // satuan yg masuk ke stock satuan terkecil
+                    $list_barang = Stok::updateOrCreate([
+                        'id_barang' => $v['id_barang'],
+                        'id_gudang' => $v['id_gudang'],
+                    ],[
+                        'qty' => DB::raw('qty+'.$v['qty'])
+                    ]);            
+                }
+            }
+            
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
             DB::rollback();
@@ -144,7 +156,7 @@ class GeneralController extends Controller
         }
         DB::commit();
 
-        return ['status' => 200];
+        return response()->json(['status' => 'success'], 200);
     }
     // mengambil data vendor, no penerimaan, data barang
     public function GetKodeBarangbyRFID(Request $request)

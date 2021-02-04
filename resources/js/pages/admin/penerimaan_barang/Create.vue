@@ -70,10 +70,10 @@
                 <tr v-for="(datas, indx) in ListData" :key="indx">
                   <td>{{datas.nama_barang}}</td>
                   <td>
-                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputKecil[datas.id_barang]"> <strong>{{datas.nama_satuan_kecil}}</strong>
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="1" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputKecil[datas.id_barang]"> <strong>{{datas.nama_satuan_kecil}}</strong>
                   </td>
                   <td>
-                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="0" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputBesar[datas.id_barang]"> <strong>{{datas.nama_satuan_besar}}</strong>
+                      <input type="number" class="form-control" @input="getIdBarang(datas.id_barang)" min="1" value="1" style="display: inline-grid;width: 30%; height:20px;"   v-model="qtyInputBesar[datas.id_barang]"> <strong>{{datas.nama_satuan_besar}}</strong>
                   </td>
                   <td>{{datas.fraction}}</td>
                   <td>
@@ -142,11 +142,11 @@ export default {
     }
   },
   created() {
-    this.getListBrg();
+      this.getListBrg();
   },
   updated(){
-    $('a.vsm--link.active').attr('class', 'router-link-exact-active ryan active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
- },
+      $('a.vsm--link.active').attr('class', 'router-link-exact-active ryan active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
+  },
   mounted() {
       this.$refs.datePicker.currentValue = [new Date()];
       $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')

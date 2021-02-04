@@ -15,6 +15,11 @@ import 'vue-sidebar-menu/dist/vue-sidebar-menu.css'
 import Permissions from './mixin'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+import moment from 'moment';
+import 'moment/locale/jv'
+import 'moment/locale/id'
+import 'v-tooltip/dist/v-tooltip.css'
+import VTooltip from 'v-tooltip'
 
 
 
@@ -24,13 +29,8 @@ Vue.use(BootstrapVue)
 Vue.use(IconsPlugin)
 Vue.use(VueSweetalert2);
 
-
-/* IN MAIN FILE */
-import Moment from 'moment'
-Moment.locale('id')
-Vue.prototype.$moment = Moment
-/* INSIDE A COMPONENT */
-// console.log(this.$moment().format("LL"))
+Vue.use(VTooltip)
+Vue.prototype.$moment = moment
 
 // Set Vue globally
 window.Vue = Vue

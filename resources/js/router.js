@@ -33,6 +33,8 @@ import KantorUpdate from './pages/admin/master_kantor/Update'
 import PenerimaanBarang from './pages/admin/penerimaan_barang/Read'
 import PenerimaanBarangNew from './pages/admin/penerimaan_barang/Create'
 import PenerimaanBarangUpdate from './pages/admin/penerimaan_barang/Update'
+import PenerimaanBarangPosting from './pages/admin/penerimaan_barang/Posting'
+
 // Routes
 const routes = [
     {
@@ -83,6 +85,15 @@ const routes = [
         path: '/penerimaan_barang',
         name: 'penerimaan barang',
         component: PenerimaanBarang,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/penerimaan_barang/:id/posting',
+        name: 'posting penerimaan barang',
+        component: PenerimaanBarangPosting,
         meta: {
             auth: true,
             menus: 'read-absensi'

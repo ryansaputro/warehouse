@@ -60,17 +60,22 @@ Route::prefix('v1')->group(function () {
     Route::post('/GetDataSatuan','GeneralController@GetDataSatuan');
     Route::get('/GetDataSatuan','GeneralController@GetDataSatuan');
     Route::get('/GetInfoStok','GeneralController@GetInfoStok');
-    Route::get('/UpdateStok','GeneralController@UpdateStok');
+    Route::post('/UpdateStok','GeneralController@UpdateStok');
     Route::get('/GetKodeBarangbyRFID','GeneralController@GetKodeBarangbyRFID');
 
     //penerimaan 
     Route::prefix('penerimaan_barang')->group(function() {
         Route::post('/create','PenerimaanBarangController@store');
         Route::get('/index','PenerimaanBarangController@index');
-        Route::get('/{id}/update','PenerimaanBarangController@show');
-        Route::post('/{id}/update','PenerimaanBarangController@update');
         Route::post('/deleteItemPenerimaan','PenerimaanBarangController@deleteItemPenerimaan');
         Route::post('/deletePenerimaan','PenerimaanBarangController@deletePenerimaan');
+        Route::post('/cekposting','PenerimaanBarangController@cekposting');
+        Route::post('/posting','PenerimaanBarangController@posting');
+        Route::get('/{no_penerimaan}/posting','PenerimaanBarangController@show');
+        Route::get('/{no_penerimaan}/update','PenerimaanBarangController@show');
+        Route::post('/{no_penerimaan}/update','PenerimaanBarangController@update');
+        Route::get('/{no_penerimaan}/MappingItemAndTag','PenerimaanBarangController@show');
+        Route::post('/{no_penerimaan}/MappingItemAndTag','PenerimaanBarangController@MappingItemAndTagSave');
     });
 
     //pengeluaran

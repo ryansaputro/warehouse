@@ -1,96 +1,86 @@
 <template>
   <div class="content">
     <div class="container">
-      <div class="user-data m-b-30 p-3" v-if="$can('dashboard-total-karyawan')">
-        <div class="my-5">
-          <h5 class="text-uppercase text-center">Total Karyawan</h5>
-          <!-- <form v-on:submit.prevent="getData">
-            <div class="row">
-              <div class="col-md-6 offset-md-3">
-                <h5>Enter A City:</h5>
-                <div class="input-group">
-                  <input type="text" class="form-control" v-model="city" />
-                  <div class="input-group-append">
-                    <button class="btn btn-outline-secondary" type="submit">Submit</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </form> -->
-        </div>
-        <div class="my-5">
-          <div class="alert alert-info" v-show="loading">
-            Loading...
-          </div>
-          <div v-show="chart != null">
-            <canvas id="TelatDatangChart"></canvas>
-          </div>
-        </div>
-    </div>
-    <div class="row" v-if="$can('dashboard-kehadiran')">
-      <div class="col-md-6">
-            <div class="user-data m-b-30 p-3">
-              <div class="my-5">
-                <h5 class="text-uppercase text-center">Kehadiran Bandung</h5>
-              </div>
-              <div class="my-5">
-                <!-- <div class="alert alert-info" v-show="loading">
-                  Loading...
-                </div> -->
-                <div v-show="chart != null">
-                  <canvas id="KehadiranBandung"></canvas>
-                </div>
-              </div>
-          </div>
-      </div>
-      <div class="col-md-6">
-            <div class="user-data m-b-30 p-3">
-              <div class="my-5">
-                <h5 class="text-uppercase text-center">Kehadiran Surabaya</h5>
-              </div>
-              <div class="my-5">
-                <!-- <div class="alert alert-info" v-show="loading">
-                  Loading...
-                </div> -->
-                <div v-show="chart != null">
-                  <canvas id="KehadiranSurabaya"></canvas>
-                </div>
-              </div>
-          </div>
-      </div>
-    </div>
     <div class="row" v-if="$can('dashboard-keterlambatan')">
-      <div class="col-md-12">
-        <div class="user-data m-b-30 p-3">
-          <div class="my-5">
-            <h5 class="text-uppercase text-center">Grafik keterlambat 30 Hr Terakhir (Bandung)</h5>
-          </div>
-          <div class="my-5">
-            <div class="alert alert-info" v-show="loading">
-              Loading...
-            </div>
-            <div v-show="chart != null">
-              <canvas id="terlambat7hrBdg"></canvas>
-            </div>
-          </div>
+      <div class="container-fluid card">
+					<div class="col col-md-12">
+						<div class="row">
+							<div class="col col-md-5">
+								<h4>Statistik hari ini</h4>
+										Total Penerimaan Barang<span class="pull-right strong">- 15%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="15"aria-valuemin="0" aria-valuemax="100" style="width:15%">15%</div>
+										</div>
+									
+										Penerimaan Barang dalam proses<span class="pull-right strong">+ 30%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="30"aria-valuemin="0" aria-valuemax="100" style="width:30%">30%</div>
+										</div>
+									
+										Total Posting<span class="pull-right strong">+ 8%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="8"aria-valuemin="0" aria-valuemax="100" style="width:8%">8%</div>
+										</div>
+							</div>
+							<div class="col col-md-5">
+								<h4>Statistik Bulan ini:</h4>
+										Total Penerimaan Barang<span class="pull-right strong">+ 45%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="45"aria-valuemin="0" aria-valuemax="100" style="width:45%">45%</div>
+										</div>
+									
+										Penerimaan Barang dalam proses<span class="pull-right strong">+ 57%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="57"aria-valuemin="0" aria-valuemax="100" style="width:57%">57%</div>
+										</div>
+									
+										Total Posting<span class="pull-right strong">+ 25%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="25"aria-valuemin="0" aria-valuemax="100" style="width:25%">25%</div>
+										</div>
+							</div>
+						</div>
+					</div>
       </div>
-
-      </div>
-      <div class="col-md-12">
-        <div class="user-data m-b-30 p-3">
-          <div class="my-5">
-            <h5 class="text-uppercase text-center">Grafik keterlambat 30 Hr Terakhir (Surabaya)</h5>
-          </div>
-          <div class="my-5">
-            <div class="alert alert-info" v-show="loading">
-              Loading...
-            </div>
-            <div v-show="chart != null">
-              <canvas id="terlambat7hrSby"></canvas>
-            </div>
-          </div>
-      </div>
-
+      <div class="container-fluid card">
+					<div class="col col-md-12">
+						<div class="row">
+							<div class="col col-md-5">
+								<!-- <h4>Statistik hari ini</h4> -->
+										Total Pengeluaran Barang<span class="pull-right strong">- 15%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-danger" role="progressbar" aria-valuenow="15"aria-valuemin="0" aria-valuemax="100" style="width:15%">15%</div>
+										</div>
+									
+										Pengeluaran Barang dalam proses<span class="pull-right strong">+ 30%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="30"aria-valuemin="0" aria-valuemax="100" style="width:30%">30%</div>
+										</div>
+									
+										Total Posting<span class="pull-right strong">+ 8%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-warning" role="progressbar" aria-valuenow="8"aria-valuemin="0" aria-valuemax="100" style="width:8%">8%</div>
+										</div>
+							</div>
+							<div class="col col-md-5">
+								<!-- <h4>Statistik Bulan ini:</h4> -->
+										Total Pengeluaran Barang<span class="pull-right strong">+ 45%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="45"aria-valuemin="0" aria-valuemax="100" style="width:45%">45%</div>
+										</div>
+									
+										Pengeluaran Barang dalam proses<span class="pull-right strong">+ 57%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="57"aria-valuemin="0" aria-valuemax="100" style="width:57%">57%</div>
+										</div>
+									
+										Total Posting<span class="pull-right strong">+ 25%</span>
+										 <div class="progress">
+											<div class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="25"aria-valuemin="0" aria-valuemax="100" style="width:25%">25%</div>
+										</div>
+							</div>
+						</div>
+					</div>
       </div>
     </div>
 
