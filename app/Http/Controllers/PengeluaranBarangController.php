@@ -17,8 +17,9 @@ use Ixudra\Curl\Facades\Curl;
 use DB;
 use App\Barang;
 use App\BarangKategori;
-use App\PenerimaanBarang;
-use App\PenerimaanBarangDetail;
+use App\PengeluaranBarang;
+use App\PengeluaranBarangDetail;
+use App\Http\Controllers\GeneralController;
 
 class PengeluaranBarangController extends Controller
 {
@@ -27,87 +28,46 @@ class PengeluaranBarangController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    protected $GeneralController;
+    public function __construct(GeneralController $GeneralController)
     {
+        $this->GeneralController = $GeneralController;
     }
 
      // mengambil semua data
     public function index(Request $request)
     {
         $data = DB::table('pengeluaran_barang')
-                    ->select('pengeluaran_barang.*', 'penerima.nama AS nama_penerima_unit', 'penerima.nama AS nama_pengirim_unit')
-                    ->join('unit AS pengirim', 'pengirim.id', '=', 'pengeluaran_barang.id_unit_pengirim')
+                    ->select('pengeluaran_barang.*', 'penerima.nama AS nama_penerima_unit', 'pengirim.nama_lokasi AS nama_pengirim_unit')
+                    ->join('lokasi AS pengirim', 'pengirim.id', '=', 'pengeluaran_barang.id_unit_pengirim')
                     ->join('unit AS penerima', 'penerima.id', '=', 'pengeluaran_barang.id_unit_penerima')
                     ->orderBy('no_pengeluaran', 'DESC')
                     ->get();
-        return ['data' => $data, 'status' => 200];
-    }
 
-    // mengambil data vendor, no penerimaan, data barang
-    public function getDataListBarang()
-    {
-        $list_barang = DB::table('barang')
-                        ->select('id AS value', DB::raw('CONCAT(kode_barang, " - ", nama_barang) AS text'))
-                        ->orderby('kode_barang', 'ASC')
-                        ->get();
-
-        $vendor = DB::table('vendor')
-                        ->select('id AS value', DB::raw('CONCAT(kode_vendor, " - ", nama_vendor) AS text'))
-                        ->orderby('kode_vendor', 'ASC')
-                        ->get();
-
-        $no_penerimaan = DB::table('penerimaan_barang')
-                        ->where(DB::raw('MONTH(tgl_penerimaan)'), '=', DB::raw('MONTH(now())'))
-                        ->orderby('id', 'DESC')
-                        ->get();
-
-        $cek_last = $no_penerimaan != null ? count($no_penerimaan)+1 : 1;
-       
-        if($cek_last == 0){
-            $cek_last = $cek_last;
-        }else if($cek_last < 10){
-            $cek_last = '000'.$cek_last;
-        }else if($cek_last < 100){
-            $cek_last = '00'.$cek_last;
-        }else if($cek_last < 1000){
-            $cek_last = '0'.$cek_last;
-        }else{
-            $cek_last = $cek_last;
-        }
-
-        $format = "Rcv-".date('Ymd').$cek_last;
-
-        return ['data' => $list_barang, 'vendor' => $vendor, 'format' => $format, 'status' => 200];
-    }
-
-    public function getDataListSatuan(Request $request)
-    {   
-        $jenis = ($request->tipe_satuan == 'satuan_besar') ? 'barang.id_satuan_barang_besar' : 'barang.id_satuan_barang_kecil';
-        $satuan_barang = DB::table('barang')
-                        ->select('barang_satuan.id', DB::raw('UPPER(nama_satuan) AS nama_satuan'))
-                        ->join('barang_satuan', 'barang_satuan.id', '=', $jenis)
-                        ->where('barang.id', $request->id)
-                        ->first();
-
-        return [$satuan_barang, 'status' => 200];
+        return response()->json(['data' => $data, 'status' => 'success'], 200);
     }
 
     // mengambil data by id
     public function show($id)
     {
-        $data = DB::table('penerimaan_barang')
-                    ->select('penerimaan_barang.*', 'nama_vendor')
-                    ->join('vendor', 'vendor.id', '=', 'penerimaan_barang.id_vendor')
-                    ->where('no_penerimaan', $id)->first();
-        $detail = DB::table('penerimaan_barang_detail')
-                    ->select('id_barang', 'nama_barang', 'qty', 'nama_satuan')
-                    ->join('barang', 'barang.id', '=', 'penerimaan_barang_detail.id_barang')
-                    ->join('barang_satuan', 'barang_satuan.id', '=', 'penerimaan_barang_detail.id_satuan_barang_besar')
-                    ->where('penerimaan_barang_detail.id_penerimaan_barang', $data->id)
+        $data = DB::table('pengeluaran_barang')
+                    ->select('pengeluaran_barang.*', 'penerima.nama AS nama_penerima_unit', 'pengirim.nama_lokasi AS nama_pengirim_unit')
+                    ->join('lokasi AS pengirim', 'pengirim.id', '=', 'pengeluaran_barang.id_unit_pengirim')
+                    ->join('unit AS penerima', 'penerima.id', '=', 'pengeluaran_barang.id_unit_penerima')
+                    ->where('no_pengeluaran', $id)
+                    ->first();
+        
+        $detail = DB::table('pengeluaran_barang_detail')
+                    ->select('pengeluaran_barang_detail.id', 'id_barang', 'nama_barang', 'qty AS qty_kecil', 'besar.nama_satuan AS nama_satuan_besar', 'kecil.nama_satuan AS nama_satuan_kecil', 'barang.fraction', 'besar.id AS id_satuan_besar', 'kecil.id AS id_satuan_kecil')
+                    ->join('barang', 'barang.id', '=', 'pengeluaran_barang_detail.id_barang')
+                    ->join('barang_satuan AS kecil', 'kecil.id', '=', 'pengeluaran_barang_detail.id_satuan_barang_kecil')
+                    ->join('barang_satuan AS besar', 'besar.id', '=', 'pengeluaran_barang_detail.id_satuan_barang_besar')
+                    ->where('pengeluaran_barang_detail.id_pengeluaran', $data->id)
+                    ->orderBy('pengeluaran_barang_detail.id_barang', 'ASC')
                     ->get();
-        $id_barang = $detail->pluck('id_barang')->toArray();
 
-        return ['data' => $data, 'detail' => $detail, 'id_barang' => $id_barang, 'status' => 200];
+
+        return ['data' => $data, 'detail' => $detail, 'status' => 200];
     }
 
     // menambah data
@@ -115,11 +75,10 @@ class PengeluaranBarangController extends Controller
     {
         //validate the data before processing
         $rules = [
-            "no_pengeluaran"=> "required|unique:penerimaan_barang,no_penerimaan",
+            "no_pengeluaran"=> "required|unique:pengeluaran_barang,no_pengeluaran",
             "id_unit_pengirim" => "required|",
             "id_unit_penerima" => "required|",
-            "tanggal_pengeluaran"=> "required|date",
-            'list_data' => "array|required"
+            "tanggal"=> "required|date",
         ];
 
         
@@ -137,23 +96,14 @@ class PengeluaranBarangController extends Controller
         try {
             //proses menyimpan data ke database...
             $data = PengeluaranBarang::create([
-                'no_pengeluaran'  => $request->no_penerimaan,
+                'no_pengeluaran'  => $request->no_pengeluaran,
                 'id_user' => Auth::user()->id,
                 'id_unit_pengirim' => $request->id_unit_pengirim,
                 'id_unit_penerima' => $request->id_unit_penerima,
-                'tanggal_pengeluaran'  => $request->tanggal_pengeluaran,
+                'tgl_pengeluaran'  => $request->tanggal." ".date('H:i:s'),
                 'status_posting' => '1',
             ]);
 
-            foreach((array)$request->list_data AS $k => $v){
-                $detail = PengeluaranBarangDetail::create([
-                    'id_pengeluaran' => $data->id, 
-                    'id_barang' => $v['id_barang'], 
-                    'id_satuan_barang_besar' => $v['id_satuan'], 
-                    'id_satuan_barang_kecil' => $v['id_satuan'], 
-                    'qty' => $v['qty'], 
-                ]);
-            }
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
             DB::rollback();
@@ -168,11 +118,9 @@ class PengeluaranBarangController extends Controller
     {
         //validate the data before processing
         $rules = [
-            "no_pengeluaran"=> "required|unique:penerimaan_barang,no_penerimaan",
             "id_unit_pengirim" => "required|",
             "id_unit_penerima" => "required|",
-            "tanggal_pengeluaran"=> "required|date",
-            'list_data' => "array|required"
+            "tanggal"=> "required|date",
         ];
 
         $customMessages = [
@@ -189,23 +137,11 @@ class PengeluaranBarangController extends Controller
             $data = PengeluaranBarang::where('no_pengeluaran', $request->no_pengeluaran);
             //proses menyimpan data ke database...
             $data->update([
-                'no_pengeluaran'  => $request->no_penerimaan,
-                'id_user' => Auth::user()->id,
                 'id_unit_pengirim' => $request->id_unit_pengirim,
                 'id_unit_penerima' => $request->id_unit_penerima,
-                'tanggal_pengeluaran'  => $request->tanggal_pengeluaran,
+                'tgl_pengeluaran'  => $request->tanggal." ".date('H:i:s'),
                 'status_posting' => '1',
             ]);
-
-            $data->first();
-            foreach((array)$request->list_data AS $k => $v){
-                $detail = PengeluaranBarangDetail::where('id_pengeluaran', $data->id)->update([
-                    'id_barang' => $v['id_barang'], 
-                    'id_satuan_barang_besar' => $v['id_satuan'], 
-                    'id_satuan_barang_kecil' => $v['id_satuan'], 
-                    'qty' => $v['qty'], 
-                ]);
-            }
 
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
@@ -215,22 +151,6 @@ class PengeluaranBarangController extends Controller
         DB::commit();
         return response()->json(['status' => 'success'], 200);
     }
-
-    // menghapus data
-    public function deleteItemPengeluaran(Request $request)
-    {
-        
-        DB::beginTransaction();
-        try {
-            $data = DB::table('pengeluaran_barang_detail')
-                    ->where('id_pengeluaran', $request->id_penerimaan)
-                    ->where('id_barang', $request->id_barang)
-                    ->delete();
-        } catch (\Throwable $th) {
-            //throw $th;
-        }
-        return response()->json(['status' => 'success']);
-    }
     
     // menghapus data
     public function deletePengeluaran(Request $request)
@@ -239,16 +159,53 @@ class PengeluaranBarangController extends Controller
         DB::beginTransaction();
         try {
             $data = DB::table('pengeluaran_barang')
-                    ->where('id', $request->id_penerimaan)
-                    ->delete();
-
-            $detail = DB::table('pengeluaran_barang_detail')
-                    ->where('id_pengeluaran', $request->id_penerimaan)
+                    ->where('no_pengeluaran', $request->no_pengeluaran)
                     ->delete();
 
         } catch (\Throwable $th) {
-            //throw $th;
+          //throw $th;
+            DB::rollback();
+            return response()->json(['status' => 'failed', 'message' => $ex->getMessage()], 500);
         }
-        return response()->json(['status' => 'success']);
+        DB::commit();
+        return response()->json(['status' => 'success'], 200);
+    }
+
+    //get data and map the tag to item
+    public function cekposting(Request $request) {
+        //get id penerimaan 
+        $data = DB::table('pengeluaran_barang')->where('no_pengeluaran', $request->no_pengeluaran)->first();
+
+        //cek apakah tag sudah terisi semua atau belum
+        $cekDataPengeluaran = DB::table('pengeluaran_barang_detail')->where('id_pengeluaran', $data->id);
+        $id_barang = $cekDataPengeluaran->pluck('id_barang')->toArray();
+        $qty = $cekDataPengeluaran->pluck('qty')->toArray();
+        $no_surat = $request->no_pengeluaran;
+        
+        foreach($id_barang AS $k => $v){
+            $list_data[] = array("id_barang" => $v, "qty"=> $qty[$k], "id_unit_penerima" => $data->id_unit_penerima);
+        }
+
+        $data = $this->GeneralController->UpdateStok('pengeluaran', $list_barang, $no_surat);
+
+        if($data){
+            return response()->json(['status' => 'success'], 200);
+        }else{
+            return response()->json(['status' => 'failed'], 500);
+        }
+
+        
+    }
+
+    // get tag from item
+    public function cekTagByItem(Request $request) {
+        $data = DB::table('pengeluaran_barang_detail_epc_tag')
+                ->select('barang_epc_tag.epc_tag', 'nama_barang')
+                ->join('barang_epc_tag', 'pengeluaran_barang_detail_epc_tag.id_epc_tag', '=', 'barang_epc_tag.id')
+                ->join('barang', 'pengeluaran_barang_detail_epc_tag.id_barang', '=', 'barang.id')
+                ->where('pengeluaran_barang_detail_epc_tag.id_pengeluaran_barang_detail', $request->id_detail_pengeluaran)
+                ->where('id_barang', $request->id_barang)
+                ->get();
+        return response()->json(['data' => $data, 'status' => 'success'], 200);
     }
 }

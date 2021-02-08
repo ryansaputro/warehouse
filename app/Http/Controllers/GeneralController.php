@@ -46,7 +46,23 @@ class GeneralController extends Controller
                         ->orderby('id', 'DESC')
                         ->get();
 
+        $no_pengeluaran = DB::table('pengeluaran_barang')
+                        ->where(DB::raw('MONTH(tgl_pengeluaran)'), '=', DB::raw('MONTH(now())'))
+                        ->orderby('id', 'DESC')
+                        ->get();
+
+        $unit = DB::table('unit')
+                        ->select('id AS value', DB::raw('CONCAT(kode, " - ", nama) AS text'))
+                        ->orderby('kode', 'ASC')
+                        ->get();
+
+        $gudang = DB::table('lokasi')
+                        ->select('id AS value', DB::raw('CONCAT(kode, " - ", nama_lokasi) AS text'))
+                        ->orderby('kode', 'ASC')
+                        ->get();
+
         $cek_last = $no_penerimaan != null ? count($no_penerimaan)+1 : 1;
+        $cek_last_pengeluaran = $no_pengeluaran != null ? count($no_pengeluaran)+1 : 1;
        
         if($cek_last == 0){
             $cek_last = $cek_last;
@@ -60,9 +76,22 @@ class GeneralController extends Controller
             $cek_last = $cek_last;
         }
 
-        $format = "Rcv-".date('Ymd').$cek_last;
+        if($cek_last_pengeluaran == 0){
+            $cek_last_pengeluaran = $cek_last_pengeluaran;
+        }else if($cek_last_pengeluaran < 10){
+            $cek_last_pengeluaran = '000'.$cek_last_pengeluaran;
+        }else if($cek_last_pengeluaran < 100){
+            $cek_last_pengeluaran = '00'.$cek_last_pengeluaran;
+        }else if($cek_last_pengeluaran < 1000){
+            $cek_last_pengeluaran = '0'.$cek_last_pengeluaran;
+        }else{
+            $cek_last_pengeluaran = $cek_last_pengeluaran;
+        }
 
-        return ['data' => $list_barang, 'vendor' => $vendor, 'format' => $format, 'status' => 200];
+        $format = "IN".date('Ymd').$cek_last;
+        $format_pengeluaran = "OUT".date('Ymd').$cek_last_pengeluaran;
+
+        return ['data' => $list_barang, 'vendor' => $vendor, 'unit' => $unit, 'gudang' => $gudang,  'format' => $format, 'format_pengeluaran' => $format_pengeluaran, 'status' => 200];
     }
     // mengambil data vendor, no penerimaan, data barang
     public function GetDataSatuan(Request $request)
@@ -104,31 +133,54 @@ class GeneralController extends Controller
         return ['satuan' =>$all_satuan, 'fraction' => $fraction, 'list_data' => $data,  'status' => 200];
     }
     // mengambil data vendor, no penerimaan, data barang
-    public function GetInfoStok()
+    public function GetInfoStok(Request $request)
     {
         // satuan yg masuk ke stock satuan terkecil
-        $list_barang = DB::table('stok_barang')
+        if($request->input('filter') == null){
+            $list_barang = DB::table('stok_barang')
+                        ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan', 'nama_lokasi')
+                        ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
+                        ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
+                        ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
+                        ->groupBy('id_barang')
+                        ->groupBy('id_gudang')
+                        ->orderby('kode_barang', 'ASC')
+                        ->get();
+        }
+        // satuan yg masuk ke stock satuan terkecil
+        else if($request->input('filter') == 'gudang'){
+            $list_barang = DB::table('stok_barang')
+                        ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan', 'nama_lokasi')
+                        ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
+                        ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
+                        ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
+                        ->groupBy('id_gudang')
+                        ->orderby('kode_barang', 'ASC')
+                        ->get();
+        }
+        // satuan yg masuk ke stock satuan terkecil
+        else if($request->input('filter') == 'item'){
+            $list_barang = DB::table('stok_barang')
                         ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan')
                         ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
                         ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
+                        // ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
                         ->groupBy('id_barang')
                         ->orderby('kode_barang', 'ASC')
                         ->get();
+        }
 
         return ['data' => $list_barang];
     }
     // mengambil data vendor, no penerimaan, data barang
-    public function UpdateStok(Request $request)
+    public function UpdateStok($jenis_permintaan, $list_data, $nomor_surat)
     {
         DB::beginTransaction();
         try {
 
-            if(isset($request->no_penerimaan)){
-                $data = DB::table('penerimaan_barang')->where('no_penerimaan', $request->no_penerimaan)->update(['status_posting' => '0']);
-            }
             //cek jika status dikeluarin 
-            if($request->status == "pengeluaran"){
-                foreach($request->list_data AS $k => $v){
+            if($jenis_permintaan == "pengeluaran"){
+                foreach($list_data AS $k => $v){
                     // satuan yg masuk ke stock satuan terkecil
                     $list_barang = Stok::updateOrCreate([
                         'id_barang' => $v['id_barang'],
@@ -137,8 +189,10 @@ class GeneralController extends Controller
                         'qty' => DB::raw('qty-'.$v['qty'])
                     ]);            
                 }
+
+                $data = DB::table('pengeluaran_barang')->where('no_pengeluaran', $nomor_surat)->update(['status_posting' => '0']);
             }else{
-                foreach($request->list_data AS $k => $v){
+                foreach($list_data AS $k => $v){
                     // satuan yg masuk ke stock satuan terkecil
                     $list_barang = Stok::updateOrCreate([
                         'id_barang' => $v['id_barang'],
@@ -147,16 +201,19 @@ class GeneralController extends Controller
                         'qty' => DB::raw('qty+'.$v['qty'])
                     ]);            
                 }
+
+                // update status posting
+                $data = DB::table('penerimaan_barang')->where('no_penerimaan', $nomor_surat)->update(['status_posting' => '0']);
             }
             
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
             DB::rollback();
-            return response()->json(['status' => 'failed', 'message' => $ex->getMessage()], 500);
+            return false;
         }
         DB::commit();
 
-        return response()->json(['status' => 'success'], 200);
+        return true;
     }
     // mengambil data vendor, no penerimaan, data barang
     public function GetKodeBarangbyRFID(Request $request)

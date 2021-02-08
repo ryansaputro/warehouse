@@ -19,6 +19,7 @@ use App\Barang;
 use App\BarangKategori;
 use App\PenerimaanBarang;
 use App\PenerimaanBarangDetail;
+use App\Http\Controllers\GeneralController;
 
 class PenerimaanBarangController extends Controller
 {
@@ -27,8 +28,10 @@ class PenerimaanBarangController extends Controller
      *
      * @return void
      */
-    public function __construct()
+    protected $GeneralController;
+    public function __construct(GeneralController $GeneralController)
     {
+        $this->GeneralController = $GeneralController;
     }
 
      // mengambil semua data
@@ -243,12 +246,28 @@ class PenerimaanBarangController extends Controller
         //cek apakah tag sudah terisi semua atau belum
         $cekDataPenerimaan = DB::table('penerimaan_barang_detail')->where('id_penerimaan_barang', $data->id)->pluck('id')->toArray();
         $tag = DB::table('penerimaan_barang_detail_epc_tag')->whereIn('id_penerimaan_barang_detail', $cekDataPenerimaan)->count();
+        
         if(count($cekDataPenerimaan) != $tag){
-            return response()->json(['status' => 'failed', 'message' => 'tag belum terisi semua'], 500);
-            // return response()->json(['status' => 'success'], 200);
+            // return response()->json(['status' => 'failed', 'message' => 'tag belum terisi semua'], 500);
+            return response()->json(['status' => 'success'], 200);
         }else{
             return response()->json(['status' => 'success'], 200);
         }
+    }
+
+    //update stock
+    public function updateStok(Request $request) {
+
+        $list_barang = $request->list_data;
+        $no_surat = $request->no_penerimaan;
+        $data = $this->GeneralController->UpdateStok('penerimaan', $list_barang, $no_surat);
+
+        if($data){
+            return response()->json(['status' => 'success'], 200);
+        }else{
+            return response()->json(['status' => 'failed'], 500);
+        }
+        
     }
 
 }

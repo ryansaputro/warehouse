@@ -131,12 +131,6 @@ export default {
       waterMark : new Date().toISOString().slice(0,10),
     }
   },
-  // props: {
-  //   id_gudang: {
-  //     type: Object,
-  //     default: () => { return { value: '1' } }
-  //   }
-  // },
   created() {
     this.loadDataPenerimaan();
   },
@@ -163,7 +157,7 @@ export default {
 
         // post data ke api menggunakan axios
         this.loading = true
-        axios.post("UpdateStok", {
+        axios.post("penerimaan_barang/updateStok", {
               no_penerimaan:this.$route.params.id,
               list_data:data,
               status:'penerimaan'
@@ -208,7 +202,6 @@ export default {
             this.form.status_posting = response.data.data.status_posting
             this.form.id_vendor = response.data.data.nama_vendor
             this.getGudang = response.data.gudang;
-            console.log(response.data)
 
             //form detail
             this.ListData = response.data.detail;

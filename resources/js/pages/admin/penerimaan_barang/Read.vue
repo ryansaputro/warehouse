@@ -160,7 +160,7 @@ export default {
               no_penerimaan: row.no_penerimaan,  
             })
             .then(response => {
-                if(response.data.status == 200){
+                if(response.status == 200){
                     this.$router.push("/penerimaan_barang/"+row.no_penerimaan+"/posting");
                 }else{
                     this.$swal({
@@ -168,7 +168,8 @@ export default {
                       text: "Data tidak tersedia atau telah diposting",
                       type: "error"
                     }).then(function() {
-                        window.location = "/penerimaan_barang";
+                        // window.location = "/penerimaan_barang";
+                        this.getProjects();
                     });
                 }
             })

@@ -71,20 +71,25 @@ Route::prefix('v1')->group(function () {
         Route::post('/deletePenerimaan','PenerimaanBarangController@deletePenerimaan');
         Route::post('/cekposting','PenerimaanBarangController@cekposting');
         Route::post('/posting','PenerimaanBarangController@posting');
+        Route::post('/updateStok','PenerimaanBarangController@updateStok');
         Route::get('/{no_penerimaan}/posting','PenerimaanBarangController@show');
         Route::get('/{no_penerimaan}/update','PenerimaanBarangController@show');
         Route::post('/{no_penerimaan}/update','PenerimaanBarangController@update');
         Route::get('/{no_penerimaan}/MappingItemAndTag','PenerimaanBarangController@show');
         Route::post('/{no_penerimaan}/MappingItemAndTag','PenerimaanBarangController@MappingItemAndTagSave');
     });
-
+    
     //pengeluaran
     Route::prefix('pengeluaran_barang')->group(function() {
-        Route::post('/create','PengeluaranBarangController@store');
         Route::get('/index','PengeluaranBarangController@index');
-        Route::get('/{id}/update','PengeluaranBarangController@show');
-        Route::post('/deleteItemPengeluaran','PengeluaranBarangController@deleteItemPengeluaran');
-        Route::post('/deletePenerimaan','PengeluaranBarangController@deletePenerimaan');
+        Route::post('/create','PengeluaranBarangController@store');
+        Route::post('/cekposting','PengeluaranBarangController@cekposting');
+        Route::post('/posting','PengeluaranBarangController@posting');
+        Route::post('/updateStok','PengeluaranBarangController@updateStok');
+        Route::post('/deletePengeluaran','PengeluaranBarangController@deletePengeluaran');
+        Route::get('/{no_pengeluaran}/update','PengeluaranBarangController@show');
+        Route::post('/{no_pengeluaran}/update','PengeluaranBarangController@update');
+        Route::post('/cekTagByItem','PengeluaranBarangController@cekTagByItem');
     });
 
     //url utk display

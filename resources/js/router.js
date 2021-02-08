@@ -35,6 +35,14 @@ import PenerimaanBarangNew from './pages/admin/penerimaan_barang/Create'
 import PenerimaanBarangUpdate from './pages/admin/penerimaan_barang/Update'
 import PenerimaanBarangPosting from './pages/admin/penerimaan_barang/Posting'
 
+
+import Stok from './pages/admin/stok/Read'
+
+import PengeluaranBarang from './pages/admin/pengeluaran_barang/Read'
+import PengeluaranBarangNew from './pages/admin/pengeluaran_barang/Create'
+import PengeluaranBarangUpdate from './pages/admin/pengeluaran_barang/Update'
+import PengeluaranBarangShow from './pages/admin/pengeluaran_barang/Show'
+
 // Routes
 const routes = [
     {
@@ -76,6 +84,51 @@ const routes = [
         path: '/dashboard',
         name: 'dashboard',
         component: AdminDashboard,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/stok',
+        name: 'stok',
+        component: Stok,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/pengeluaran_barang',
+        name: 'pengeluaran barang',
+        component: PengeluaranBarang,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/pengeluaran_barang/create',
+        name: 'pengeluaran barang',
+        component: PengeluaranBarangNew,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/pengeluaran_barang/:id/show',
+        name: 'lihat penerimaan barang',
+        component: PengeluaranBarangShow,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+    {
+        path: '/pengeluaran_barang/:id/edit',
+        name: 'perbarui penerimaan barang',
+        component: PengeluaranBarangUpdate,
         meta: {
             auth: true,
             menus: 'read-absensi'
