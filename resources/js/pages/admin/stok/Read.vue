@@ -9,13 +9,15 @@
                     :actions="actions"
                     v-if="$can('read-divisi')"
                     @on-newdata="newData">
+
                 </vue-bootstrap4-table>
-                <!--   -->
+                
                 <vue-bootstrap4-table 
                     :rows="rows" 
                     :columns="columns" 
                     :config="config"
                     v-else>
+
                 </vue-bootstrap4-table>
           </div>
     </div>
@@ -143,5 +145,11 @@ export default {
         this.filter = this.filter == '' ? 'none' : this.filter;
         $('.card-header').html('<strong class="text-uppercase">Filter By : '+this.filter+'</strong>')
     },
+    // watch : {
+    //     totalStok:function(val) {
+    //         console.log(this.rows);
+    //     },
+
+    // }
 };
 </script>

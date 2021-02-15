@@ -19,6 +19,7 @@ use App\Barang;
 use App\BarangKategori;
 use App\PengeluaranBarang;
 use App\PengeluaranBarangDetail;
+use App\PengeluaranBarangDetailEpc;
 use App\Http\Controllers\GeneralController;
 
 class PengeluaranBarangController extends Controller
@@ -73,6 +74,29 @@ class PengeluaranBarangController extends Controller
     // menambah data
     public function store(Request $request)
     {
+        foreach($request->list_data AS $k => $v):
+            // $dtl = PengeluaranBarangDetail::create([
+            //     'id_pengeluaran' => $data->id, 
+            //     'id_barang' => $v[1], 
+            //     'id_satuan_barang_kecil' => $v[4], 
+            //     'qty' => $v[3], 
+            // ]);
+            foreach($request->list_tag[$v[0]] AS $key => $val){
+                // echo "id_barang :". $v[1]." -> ";
+                // print_r($val)."<br>";
+                // $epc = PengeluaranBarangDetail::create([
+                //     'id_pengeluaran_barang_detail' => $dtl->id, 
+                //     'id_barang' => $v[1], 
+                //     'id_epc_tag' => $satuan[strtolower($v[2])], 
+                // ]);
+            }
+        endforeach;
+        // echo "<pre>".print_r($request->list_tag)."</pre>";
+        // echo "<pre>".print_r($request->list_tag)."</pre>";
+        // $satuan = DB::table('barang_satuan')->select('id', DB::raw('LOWER(nama_satuan) AS nama_satuan'))->pluck('id', 'nama_satuan')->toArray();
+        // $satuan = DB::table('barang_satuan')->select('id', DB::raw('LOWER(nama_satuan) AS nama_satuan'))->pluck('id', 'nama_satuan')->toArray();
+        
+        dd($request->all());
         //validate the data before processing
         $rules = [
             "no_pengeluaran"=> "required|unique:pengeluaran_barang,no_pengeluaran",
@@ -103,6 +127,26 @@ class PengeluaranBarangController extends Controller
                 'tgl_pengeluaran'  => $request->tanggal." ".date('H:i:s'),
                 'status_posting' => '1',
             ]);
+
+            // foreach($request->list_data AS $k => $v):
+            //     $dtl = PengeluaranBarangDetail::create([
+            //         'id_pengeluaran' => $data->id, 
+            //         'id_barang' => $v[1], 
+            //         'id_satuan_barang_kecil' => $satuan[strtolower($v[2])], 
+            //         'qty' => $v[3], 
+            //     ]);
+            //     print_r($v[1]);
+            //     print_r($request->list_tag[$v[0]]);
+            //     foreach($request->list_tag[$v[0]] AS $key => $val){
+                // '', 'id_barang', 'id_epc_tag'
+                    // $epc = PengeluaranBarangDetail::create([
+                //         'id_pengeluaran_barang_detail' => $dtl->id, 
+                //         'id_barang' => $v[1], 
+                //         'id_epc_tag' => $satuan[strtolower($v[2])], 
+                //     ]);
+            //     }
+            // endforeach;
+
 
         } catch (\Illuminate\Database\QueryException $ex) {
             //throw $th;
@@ -183,7 +227,7 @@ class PengeluaranBarangController extends Controller
         $no_surat = $request->no_pengeluaran;
         
         foreach($id_barang AS $k => $v){
-            $list_data[] = array("id_barang" => $v, "qty"=> $qty[$k], "id_unit_penerima" => $data->id_unit_penerima);
+            $list_barang[] = array("id_barang" => $v, "qty"=> $qty[$k], "id_unit_penerima" => $data->id_unit_penerima, 'id_gudang' => $data->id_unit_pengirim);
         }
 
         $data = $this->GeneralController->UpdateStok('pengeluaran', $list_barang, $no_surat);

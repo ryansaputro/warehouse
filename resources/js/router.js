@@ -34,6 +34,7 @@ import PenerimaanBarang from './pages/admin/penerimaan_barang/Read'
 import PenerimaanBarangNew from './pages/admin/penerimaan_barang/Create'
 import PenerimaanBarangUpdate from './pages/admin/penerimaan_barang/Update'
 import PenerimaanBarangPosting from './pages/admin/penerimaan_barang/Posting'
+import PenerimaanBarangShow from './pages/admin/penerimaan_barang/Show'
 
 
 import Stok from './pages/admin/stok/Read'
@@ -143,6 +144,16 @@ const routes = [
             menus: 'read-absensi'
         }
     },
+    {
+        path: '/penerimaan_barang/:id/show',
+        name: 'lihat penerimaan barang',
+        component: PenerimaanBarangShow,
+        meta: {
+            auth: true,
+            menus: 'read-absensi'
+        }
+    },
+
     {
         path: '/penerimaan_barang/:id/posting',
         name: 'posting penerimaan barang',

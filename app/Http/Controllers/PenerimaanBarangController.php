@@ -19,6 +19,7 @@ use App\Barang;
 use App\BarangKategori;
 use App\PenerimaanBarang;
 use App\PenerimaanBarangDetail;
+use App\RelasiTagAndItem;
 use App\Http\Controllers\GeneralController;
 
 class PenerimaanBarangController extends Controller
@@ -40,7 +41,7 @@ class PenerimaanBarangController extends Controller
         $data = DB::table('penerimaan_barang')
                     ->select('penerimaan_barang.*', 'nama_vendor')
                     ->join('vendor', 'vendor.id', '=', 'penerimaan_barang.id_vendor')
-                    ->orderBy('no_penerimaan', 'DESC')
+                    ->orderBy('tgl_penerimaan', 'DESC')
                     ->get();
         return ['data' => $data, 'status' => 200];
     }
@@ -52,15 +53,16 @@ class PenerimaanBarangController extends Controller
                     ->select('penerimaan_barang.*', 'nama_vendor')
                     ->join('vendor', 'vendor.id', '=', 'penerimaan_barang.id_vendor')
                     ->where('no_penerimaan', $id)
-                    ->where('status_posting', '1')
+                    // ->where('status_posting', '1')
                     ->first();
+    
         
         if($data == null){
             return response()->json(['status' => 'failed', 'message' => 'data tidak tersedia'], 500);
         }
 
         $detail = DB::table('penerimaan_barang_detail')
-                    ->select('id_barang', 'nama_barang', 'qty AS qty_kecil', 'besar.nama_satuan AS nama_satuan_besar', 'kecil.nama_satuan AS nama_satuan_kecil', 'barang.fraction', 'besar.id AS id_satuan_besar', 'kecil.id AS id_satuan_kecil')
+                    ->select('penerimaan_barang_detail.id', 'id_barang', 'nama_barang', 'qty AS qty_kecil', 'besar.nama_satuan AS nama_satuan_besar', 'kecil.nama_satuan AS nama_satuan_kecil', 'barang.fraction', 'besar.id AS id_satuan_besar', 'kecil.id AS id_satuan_kecil')
                     ->join('barang', 'barang.id', '=', 'penerimaan_barang_detail.id_barang')
                     ->join('barang_satuan AS kecil', 'kecil.id', '=', 'penerimaan_barang_detail.id_satuan_barang_kecil')
                     ->join('barang_satuan AS besar', 'besar.id', '=', 'penerimaan_barang_detail.id_satuan_barang_besar')
@@ -260,14 +262,48 @@ class PenerimaanBarangController extends Controller
 
         $list_barang = $request->list_data;
         $no_surat = $request->no_penerimaan;
-        $data = $this->GeneralController->UpdateStok('penerimaan', $list_barang, $no_surat);
+        $getDataTag = DB::table('penerimaan_barang')
+                        ->select('epc_tag', 'barang_epc_tag.id', 'penerimaan_barang_detail.id_barang')
+                        ->join('penerimaan_barang_detail', 'penerimaan_barang_detail.id_penerimaan_barang', '=', 'penerimaan_barang.id')
+                        ->join('penerimaan_barang_detail_epc_tag', 'penerimaan_barang_detail.id', '=', 'penerimaan_barang_detail_epc_tag.id_penerimaan_barang_detail')
+                        ->join('barang_epc_tag', 'penerimaan_barang_detail_epc_tag.id_epc_tag', '=', 'barang_epc_tag.id')
+                        ->where('penerimaan_barang.no_penerimaan', $no_surat)
+                        ->get();
+        
+        DB::beginTransaction();
+        try {
+            foreach($getDataTag AS $k => $v){
+                $data = RelasiTagAndItem::updateOrCreate([
+                        'id_barang' => $v->id_barang,
+                        'id_epc_tag' => $v->id,
+                    ],[
+                        'is_used' => DB::raw('IF(is_used = "1", "0", "1")')
+                ]);
 
-        if($data){
-            return response()->json(['status' => 'success'], 200);
-        }else{
+            }
+            $data = $this->GeneralController->UpdateStok('penerimaan', $list_barang, $no_surat);
+            //code...
+        } catch (\Throwable $th) {
+            DB::rollback();
+            //throw $th;
             return response()->json(['status' => 'failed'], 500);
         }
+        DB::commit();
+        return response()->json(['status' => 'success'], 200);
+
         
+    }
+
+    // get tag from item
+    public function cekTagByItem(Request $request) {
+        $data = DB::table('penerimaan_barang_detail_epc_tag')
+                ->select('barang_epc_tag.epc_tag', 'nama_barang')
+                ->join('barang_epc_tag', 'penerimaan_barang_detail_epc_tag.id_epc_tag', '=', 'barang_epc_tag.id')
+                ->join('barang', 'penerimaan_barang_detail_epc_tag.id_barang', '=', 'barang.id')
+                ->where('penerimaan_barang_detail_epc_tag.id_penerimaan_barang_detail', $request->id_detail_penerimaan)
+                ->where('id_barang', $request->id_barang)
+                ->get();
+        return response()->json(['data' => $data, 'status' => 'success'], 200);
     }
 
 }

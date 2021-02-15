@@ -72,6 +72,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/cekposting','PenerimaanBarangController@cekposting');
         Route::post('/posting','PenerimaanBarangController@posting');
         Route::post('/updateStok','PenerimaanBarangController@updateStok');
+        Route::post('/cekTagByItem','PenerimaanBarangController@cekTagByItem');
         Route::get('/{no_penerimaan}/posting','PenerimaanBarangController@show');
         Route::get('/{no_penerimaan}/update','PenerimaanBarangController@show');
         Route::post('/{no_penerimaan}/update','PenerimaanBarangController@update');

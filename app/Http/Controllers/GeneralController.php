@@ -4,7 +4,7 @@
  * @email ryansaputro52@gmail.com
  * @create date 2020-09-28 11:01:41
  * @modify date 2020-09-28 11:01:41
- * @desc menghandle request dr modul master lokasi
+ * @desc menghandle request dr modul master
  */
 
 namespace App\Http\Controllers;
@@ -28,7 +28,7 @@ class GeneralController extends Controller
     {
     }
 
-    // mengambil data vendor, no penerimaan, data barang
+    // mengambil data vendor, no penerimaan, no_pengeluaran, data barang
     public function MasterData()
     {
         $list_barang = DB::table('barang')
@@ -93,7 +93,7 @@ class GeneralController extends Controller
 
         return ['data' => $list_barang, 'vendor' => $vendor, 'unit' => $unit, 'gudang' => $gudang,  'format' => $format, 'format_pengeluaran' => $format_pengeluaran, 'status' => 200];
     }
-    // mengambil data vendor, no penerimaan, data barang
+    // mengambil data satuan
     public function GetDataSatuan(Request $request)
     {
         $satuan_barang_kecil = DB::table('barang')
@@ -128,51 +128,56 @@ class GeneralController extends Controller
                         "nama_satuan_kecil" => $satuan_barang_kecil[0]->nama_satuan, 
                         "id_satuan_besar" => $satuan_barang_besar[0]->id, 
                         "nama_satuan_besar" => $satuan_barang_besar[0]->nama_satuan,
-                        "fraction" => $fraction);        
+                        "fraction" => $fraction); 
 
-        return ['satuan' =>$all_satuan, 'fraction' => $fraction, 'list_data' => $data,  'status' => 200];
+        $dataTag = DB::table('relasi_epc_barang')
+                        ->select('relasi_epc_barang.id AS value', DB::raw('CONCAT(epc_tag, " - ", nama_barang) AS text'))
+                        ->join('barang_epc_tag', 'relasi_epc_barang.id_epc_tag', '=', 'barang_epc_tag.id')
+                        ->join('barang', 'relasi_epc_barang.id_barang', '=', 'barang.id')
+                        ->where('id_barang', $request->id)
+                        ->get();       
+                
+        $usedTag =   $dataTag;//->where('is_used', '1');
+
+        if(isset($request->lokasi_pengirim)){
+            $stok = DB::table('stok_barang')->where('id_barang', $request->id)->where('id_gudang', $request->lokasi_pengirim)->value('qty');
+        }else{
+            $stok = 0;
+        }
+
+
+        return ['satuan' =>$all_satuan, 'fraction' => $fraction,  'usedTag' => $usedTag, 'stok' => $stok, 'list_data' => $data,  'status' => 200];
     }
-    // mengambil data vendor, no penerimaan, data barang
+    // mengambil data info stok
     public function GetInfoStok(Request $request)
     {
-        // satuan yg masuk ke stock satuan terkecil
-        if($request->input('filter') == null){
-            $list_barang = DB::table('stok_barang')
+         $list_barang = DB::table('stok_barang')
                         ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan', 'nama_lokasi')
                         ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
                         ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
                         ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
-                        ->groupBy('id_barang')
-                        ->groupBy('id_gudang')
-                        ->orderby('kode_barang', 'ASC')
-                        ->get();
+                        ->orderby('kode_barang', 'ASC');
+                        
+        // satuan yg masuk ke stock satuan terkecil
+        if($request->input('filter') == null){
+            $list_barang->groupBy('id_barang')
+                        ->groupBy('id_gudang');
         }
         // satuan yg masuk ke stock satuan terkecil
         else if($request->input('filter') == 'gudang'){
-            $list_barang = DB::table('stok_barang')
-                        ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan', 'nama_lokasi')
-                        ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
-                        ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
-                        ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
-                        ->groupBy('id_gudang')
-                        ->orderby('kode_barang', 'ASC')
-                        ->get();
+            $list_barang->groupBy('id_gudang')
+                        ->groupBy('kode_barang');
         }
         // satuan yg masuk ke stock satuan terkecil
         else if($request->input('filter') == 'item'){
-            $list_barang = DB::table('stok_barang')
-                        ->select(DB::raw('SUM(qty) AS stok'), 'kode_barang', 'nama_barang', 'nama_satuan')
-                        ->join('barang', 'barang.id', '=', 'stok_barang.id_barang')
-                        ->join('barang_satuan', 'barang.id_satuan_barang_kecil', '=', 'barang_satuan.id')
-                        // ->join('lokasi', 'lokasi.id', '=', 'stok_barang.id_gudang')
-                        ->groupBy('id_barang')
-                        ->orderby('kode_barang', 'ASC')
-                        ->get();
+            $list_barang->groupBy('id_barang');
         }
+
+        $list_barang = $list_barang->get();
 
         return ['data' => $list_barang];
     }
-    // mengambil data vendor, no penerimaan, data barang
+    // update stok dr penerimaan ataupun dr pengeluaran
     public function UpdateStok($jenis_permintaan, $list_data, $nomor_surat)
     {
         DB::beginTransaction();
@@ -215,7 +220,7 @@ class GeneralController extends Controller
 
         return true;
     }
-    // mengambil data vendor, no penerimaan, data barang
+    // get kode barang dr tag rfid
     public function GetKodeBarangbyRFID(Request $request)
     {
         $request->id_barang = 1;

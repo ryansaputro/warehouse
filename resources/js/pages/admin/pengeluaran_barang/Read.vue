@@ -15,7 +15,7 @@
                         <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
-                        <button type="button" class="btn btn-success btn-sm" v-if="props.row.status_posting == '1'" @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
+                        <button type="button" class="btn btn-success btn-sm"  @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
                         <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
@@ -33,7 +33,7 @@
                         <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
-                        <button type="button" class="btn btn-success btn-sm" v-if="props.row.status_posting == '1'" @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
+                        <button type="button" class="btn btn-success btn-sm" @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
                         <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
@@ -65,21 +65,44 @@ export default {
                     label: "Tanggal",
                     name: "tgl_pengeluaran",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "Tanggal",
+                        init: {
+                            value : moment(new Date()).format('YYYY-MM-DD')
+                        }  
+                    },
                 },
                 {
                     label: "No Pengeluaran",
                     name: "no_pengeluaran",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "No Pengeluaran"
+                    },
+                    
                 },
                 {
                     label: "Unit Pengirim",
                     name: "nama_pengirim_unit",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "Unit Pengirim"
+                    },
+
+                    
                 },
                 {
                     label: "Unit Penerima",
                     name: "nama_penerima_unit",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "Unit Penerima"
+                    },
+                    
                 },
                 {
                     label: "Status Posting",
@@ -99,7 +122,7 @@ export default {
                  selected_rows_info:true,
                  global_search: {
                         placeholder: "Pencarian...",
-                        visibility: true,
+                        visibility: false,
                         case_sensitive: false,
                         showClearButton: false,
                         searchOnPressEnter: false,
@@ -165,21 +188,25 @@ export default {
             });
         },  
         onPosting(row) {
+            this.loading =  true;
             axios.post("pengeluaran_barang/cekposting", {
               no_pengeluaran: row.no_pengeluaran,  
             })
             .then(response => {
-                console.log(response.data)
-                if(response.data.status == 'success'){
-                    this.$router.push("/pengeluaran_barang/"+row.no_pengeluaran+"/posting");
+                if(response.status == 200){
+                    this.$swal({
+                      title: "Berhasil",
+                      text: "Posting berhasil",
+                      type: "success"
+                    });
+                    this.getProjects();
                 }else{
                     this.$swal({
                       title: "Opps",
                       text: "Detail item tidak tersedia",
                       type: "error"
-                    }).then(function() {
-                        // window.location = "/pengeluaran_barang";
-                    });
+                    })
+                this.getProjects();
                 }
             })
             .catch(errors => {

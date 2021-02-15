@@ -15,6 +15,7 @@
                         <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
+                        <button type="button" class="btn btn-success btn-sm"  @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
                         <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
@@ -32,6 +33,7 @@
                         <span class="badge badge-danger" v-else>Telah diposting</span>
                     </template>
                     <template slot="action-slot" slot-scope="props" v-if="$can('edit-divisi')">
+                        <button type="button" class="btn btn-success btn-sm"  @click="onShow(props.row)"><i class="fa fa-eye" aria-hidden="true"></i> Lihat</button>
                         <button type="button" class="btn btn-primary btn-sm" v-if="props.row.status_posting == '1'" @click="onEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-secondary  btn-sm" v-else @click="onNoEdit(props.row)"><i class="fa fa-pencil-square-o" aria-hidden="true"></i> Edit</button>
                         <button type="button" class="btn btn-danger btn-sm" v-if="props.row.status_posting == '1'" @click="onDelete(props.row)"><i class="fa fa-trash" aria-hidden="true"></i> Hapus</button>
@@ -63,21 +65,36 @@ export default {
                     label: "Tanggal",
                     name: "created_at",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "Tanggal",
+                        init: {
+                            value : moment(new Date()).format('YYYY-MM-DD')
+                        }   
+                    },
                 },
                 {
                     label: "No Penerimaan",
                     name: "no_penerimaan",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "No Penerimaan"
+                    },
                 },
                 {
                     label: "Vendor",
                     name: "nama_vendor",
                     sort: true,
+                    filter: {
+                        type: "simple",
+                        placeholder: "Vendor"
+                    },
                 },
                 {
                     label: "Status Posting",
                     name: "status_posting",
-                    slot_name: "status-slot"
+                    slot_name: "status-slot",
                 },
                 {
                     label: "Aksi",
@@ -92,7 +109,7 @@ export default {
                  selected_rows_info:true,
                  global_search: {
                         placeholder: "Pencarian...",
-                        visibility: true,
+                        visibility: false,
                         case_sensitive: false,
                         showClearButton: false,
                         searchOnPressEnter: false,
@@ -103,6 +120,7 @@ export default {
                     },
                     show_refresh_button: false, 
                     show_reset_button: false, 
+                     per_page_options: [5, 10, 20, 30],
             },
             actions: [
                 {
@@ -118,6 +136,9 @@ export default {
         }
     },
     methods: {
+        onShow(row) {
+            this.$router.push("/penerimaan_barang/"+row.no_penerimaan+"/show");
+        },
         onNoEdit(row) {
             this.$swal('Maaf', 'Tidak dapat meng-edit <br>No Penerimaan: <b>'+row.no_penerimaan+'</b> dikarenakan telah diposting', 'error');
         },

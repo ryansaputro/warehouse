@@ -42,6 +42,7 @@
                   <th>Satuan Kecil</th>
                   <th>Satuan Besar</th>
                   <th>Fraction</th>
+                  <th>List Tag</th>
                   <th>Gudang</th>
                 </tr>
               </thead>
@@ -55,6 +56,7 @@
                     {{qtyInputBesar[datas.id_barang]}} <strong class="text-uppercase">{{datas.nama_satuan_besar}}</strong>
                   </td>
                   <td>{{datas.fraction}}</td>
+                  <td><button type="button" class="btn btn-primary btn-sm" @click="cekTag(datas.id_barang, datas.id)">list tag</button></td>
                   <td>
                     <!-- <select class="form-control" v-model="form.id_gudang[datas.id_barang]">
                       <option v-for="(data, idx) in getGudang" :value="data.value" :key="idx" :selected= "data.value === 1">
@@ -67,6 +69,7 @@
                               >
                     </model-select>
                   </td>
+                  
                 </tr>
               </tbody>
             </table>
@@ -141,6 +144,48 @@ export default {
     $('a.vsm--link.active').attr('class', 'router-link-exact-active active vsm--link vsm--link_level-1 vsm--link_active vsm--link_exact-active')
  },
   methods: {
+    cekTag(id_barang, id_detail_penerimaan) {
+        this.loading = true
+        axios.post("penerimaan_barang/cekTagByItem", {
+              id_detail_penerimaan:id_detail_penerimaan,
+              id_barang:id_barang
+          })
+          .then(response => {
+            // push router ke read data
+            var tbody = "";
+            $.each(response.data.data, function(k,v){
+              tbody += "<tr><td>"+(k+1)+"</td><td>"+v.nama_barang+"</td>"
+              tbody += "<td>"+v.epc_tag+"</td></tr>"
+            });
+
+              this.$swal.fire({
+                title: 'List Tag',
+                html: '<table class="table table-striped"><thead><tr><th>No</th><th>Item</th><th>Epc Tag</th></tr></thead><tbody>'+tbody+'</tbody></table>',
+              });
+
+          })
+          .catch(errors => {
+              // this.$swal('Failed', 'You failed Created this file', 'error');
+              if (errors.response) {
+                  var data = '';
+                  $.each(errors.response.data.errors, function(k,v){
+                    data += v[0]+"\n";
+                  });
+                  this.$swal('Gagal', data, 'error');
+                // client received an error response (5xx, 4xx)
+              } else if (errors.request) {
+                  console.log(errors.request);
+                  console.log("request never left")
+                // client never received a response, or request never left
+              } else {
+                console.log("lainnya")
+              }
+  
+          }).finally(() => {
+              this.loading =  false
+          });
+
+    },
     addData() {
       var gudang = this.form.id_gudang.filter(function (el) {
         return el != null && el != "";

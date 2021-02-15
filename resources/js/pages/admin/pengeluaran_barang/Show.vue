@@ -24,7 +24,7 @@
             <tr>
               <th>Status Posting</th>
               <th>:</th>
-              <td>{{form.status_posting == '1' ? 'belum diposting' : 'telah diposting'}}</td>
+              <td>{{form.status_posting == 1 ? 'belum diposting' : 'telah diposting'}}</td>
               <th colspan="3"></th>
             </tr>
           </table>
@@ -206,6 +206,7 @@ export default {
             .then(response => {
 
               this.form.no_pengeluaran = response.data.data.no_pengeluaran;
+              this.form.status_posting = response.data.data.status_posting;
               this.form.tanggal = response.data.data.tgl_pengeluaran;
               this.form.nama_pengirim_unit = response.data.data.nama_pengirim_unit;
               this.form.nama_penerima_unit = response.data.data.nama_penerima_unit;
