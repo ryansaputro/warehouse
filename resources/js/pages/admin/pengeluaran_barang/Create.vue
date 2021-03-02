@@ -25,35 +25,60 @@
           <div class="col-md-6">
             <div class="form-group">
               <label>Unit Pengirim</label>
-              <model-select :options="getUnit"
+              <!-- <model-select :options="getUnit"
                               v-model="form.id_unit_pengirim"
                               placeholder="Pilih Unit Pengirim"
                               >
-              </model-select>
+              </model-select> -->
+              <select
+                class="form-control"
+                v-model="form.id_unit_pengirim"
+                >
+                <option v-for="(data, idx) in getUnit" :key="idx" :value="data.value">{{data.text}}</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Lokasi Pengirim</label>
-              <model-select :options="getGudang"
+              <!-- <model-select :options="getGudang"
                               v-model="form.id_lokasi_pengirim"
                               placeholder="Pilih Lokasi Pengirim"
                               >
-              </model-select>
+              </model-select> -->
+              <select
+                class="form-control"
+                v-model="form.id_lokasi_pengirim"
+                >
+                <option v-for="(data, idx) in getGudang" :key="idx" :value="data.value">{{data.text}}</option>
+              </select>
             </div>
             <div class="form-group">
               <label>Unit Penerima</label>
-              <model-select :options="getUnit"
+              <!-- <model-select :options="getUnit"
                               v-model="form.id_unit_penerima"
                               placeholder="Pilih Unit Penerima"
                               >
-              </model-select>
+              </model-select> -->
+              <select
+                class="form-control"
+                v-model="form.id_unit_penerima"
+                >
+                <option v-for="(data, idx) in getUnit" :key="idx" :value="data.value" :disabled="data.value == form.id_unit_pengirim  ? true : false">{{data.text}}</option>
+              </select>
+
             </div>
             <div class="form-group">
               <label>Lokasi Penerimaan</label>
-              <model-select :options="getGudang"
+              <!-- <model-select :options="getGudang"
                               v-model="form.id_lokasi_penerima"
                               placeholder="Pilih Lokasi Penerimaan"
                               >
-              </model-select>
+              </model-select> -->
+              <select
+                class="form-control"
+                v-model="form.id_lokasi_penerima"
+                >
+                <option v-for="(data, idx) in getGudang" :key="idx" :value="data.value" :disabled="data.value == form.id_lokasi_pengirim ? true : false">{{data.text}}</option>
+              </select>
             </div>
           </div>
         </div>
@@ -94,14 +119,20 @@
           <div class="col-md-6 mb-2" v-if="form.qty > 0" style="height: 330px;overflow-y: auto;">
             <div v-for="index in getNumbers(0,form.qty)" :key="index">
               <div class="form-group">
-                id tag : {{form.id_epc_tag[index]}}
+                
                 <label v-if="form.satuan == 'satuan_kecil'"> {{form.id_satuan_barang_kecil}} ke {{index+1}} </label>
                 <label v-else> {{form.id_satuan_barang_besar}} ke {{index+1}}</label>
-                <model-select :options="getTag"
+                <!-- <model-select :options="getTag"
                               v-model="form.id_epc_tag[index]"
                               placeholder="Pilih Tag"
                               >
-                </model-select>
+                </model-select> -->
+                <select
+                  v-model="form.id_epc_tag[index]"
+                  class="form-control"
+                >
+                  <option v-for="(data, idx) in getTag" :key="idx" :value="data.text" :disabled="checkData == data.text ? true : false">{{data.text}}</option>
+                </select>
                 <!-- <multiselect v-model="form.id_epc_tag[index]" :options="getTag" :hideSelected="true"  placeholder="Select one" label="text" track-by="value"></multiselect> -->
                 <!-- <input type="text" required v-model="form.id_epc_tag[index]" class="form-control is-invalid" v-if="form.id_epc_tag[index] == '' || form.id_epc_tag.length == 0 || form.id_epc_tag[index] === undefined">
                 <input type="text" required v-model="form.id_epc_tag[index]" class="form-control is-valid" v-else> -->
@@ -229,7 +260,7 @@ export default {
           })
           .then(response => {
             // push router ke read data
-            // this.$router.push("/pengeluaran_barang");
+            this.$router.push("/pengeluaran_barang");
             this.$swal('Berhasil', 'Pengeluaran Barang berhasil dibuat', 'success');
           })
           .catch(errors => {
@@ -284,7 +315,6 @@ export default {
               this.form.satuan == 'satuan_kecil' ? this.id_satuan = response.data.satuan[0].id : this.id_satuan = response.data.satuan[1].id; 
               this.getTag = response.data.usedTag;
               this.form.stok = Number(response.data.stok);
-              console.log(this.getTag);
               
           })
           .catch(errors => {
@@ -360,8 +390,19 @@ export default {
 
   },
   computed: {
+    checkData: function() {
+      return this.form.id_epc_tag;
+    },
+    cekUnit: function() {
+      return this.form.id_unit_penerima;
+    },
+    cekLokasi: function() {
+      return this.form.id_lokasi_penerima;
+    }
   },
   watch : {
-  }
+  },
+  updated() {
+  },
 };
 </script>

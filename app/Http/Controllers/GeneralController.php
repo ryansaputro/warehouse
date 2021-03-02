@@ -131,7 +131,9 @@ class GeneralController extends Controller
                         "fraction" => $fraction); 
 
         $dataTag = DB::table('relasi_epc_barang')
-                        ->select('relasi_epc_barang.id AS value', DB::raw('CONCAT(epc_tag, " - ", nama_barang) AS text'))
+                        ->select('relasi_epc_barang.id AS value', 'epc_tag AS text'
+                                // DB::raw('CONCAT(epc_tag, " - ", nama_barang) AS text')
+                        )
                         ->join('barang_epc_tag', 'relasi_epc_barang.id_epc_tag', '=', 'barang_epc_tag.id')
                         ->join('barang', 'relasi_epc_barang.id_barang', '=', 'barang.id')
                         ->where('id_barang', $request->id)

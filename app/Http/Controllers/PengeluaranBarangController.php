@@ -11,7 +11,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
-// import file model Person
 use Illuminate\Support\Facades\Auth;
 use Ixudra\Curl\Facades\Curl;
 use DB;
@@ -74,29 +73,7 @@ class PengeluaranBarangController extends Controller
     // menambah data
     public function store(Request $request)
     {
-        foreach($request->list_data AS $k => $v):
-            // $dtl = PengeluaranBarangDetail::create([
-            //     'id_pengeluaran' => $data->id, 
-            //     'id_barang' => $v[1], 
-            //     'id_satuan_barang_kecil' => $v[4], 
-            //     'qty' => $v[3], 
-            // ]);
-            foreach($request->list_tag[$v[0]] AS $key => $val){
-                // echo "id_barang :". $v[1]." -> ";
-                // print_r($val)."<br>";
-                // $epc = PengeluaranBarangDetail::create([
-                //     'id_pengeluaran_barang_detail' => $dtl->id, 
-                //     'id_barang' => $v[1], 
-                //     'id_epc_tag' => $satuan[strtolower($v[2])], 
-                // ]);
-            }
-        endforeach;
-        // echo "<pre>".print_r($request->list_tag)."</pre>";
-        // echo "<pre>".print_r($request->list_tag)."</pre>";
-        // $satuan = DB::table('barang_satuan')->select('id', DB::raw('LOWER(nama_satuan) AS nama_satuan'))->pluck('id', 'nama_satuan')->toArray();
-        // $satuan = DB::table('barang_satuan')->select('id', DB::raw('LOWER(nama_satuan) AS nama_satuan'))->pluck('id', 'nama_satuan')->toArray();
-        
-        dd($request->all());
+
         //validate the data before processing
         $rules = [
             "no_pengeluaran"=> "required|unique:pengeluaran_barang,no_pengeluaran",
@@ -118,6 +95,8 @@ class PengeluaranBarangController extends Controller
 
         DB::beginTransaction();
         try {
+            $epc = DB::table('barang_epc_tag')->select('id', DB::raw('LOWER(epc_tag) AS epc_tag'))->where('status', '1')->pluck('id', 'epc_tag')->toArray();
+            
             //proses menyimpan data ke database...
             $data = PengeluaranBarang::create([
                 'no_pengeluaran'  => $request->no_pengeluaran,
@@ -128,24 +107,26 @@ class PengeluaranBarangController extends Controller
                 'status_posting' => '1',
             ]);
 
-            // foreach($request->list_data AS $k => $v):
-            //     $dtl = PengeluaranBarangDetail::create([
-            //         'id_pengeluaran' => $data->id, 
-            //         'id_barang' => $v[1], 
-            //         'id_satuan_barang_kecil' => $satuan[strtolower($v[2])], 
-            //         'qty' => $v[3], 
-            //     ]);
-            //     print_r($v[1]);
-            //     print_r($request->list_tag[$v[0]]);
-            //     foreach($request->list_tag[$v[0]] AS $key => $val){
-                // '', 'id_barang', 'id_epc_tag'
-                    // $epc = PengeluaranBarangDetail::create([
-                //         'id_pengeluaran_barang_detail' => $dtl->id, 
-                //         'id_barang' => $v[1], 
-                //         'id_epc_tag' => $satuan[strtolower($v[2])], 
-                //     ]);
-            //     }
-            // endforeach;
+            $epc = DB::table('barang_epc_tag')->select('id', DB::raw('LOWER(epc_tag) AS epc_tag'))->where('status', '1')->pluck('id', 'epc_tag')->toArray();
+            foreach($request->list_data AS $key => $val){
+                
+                $dtl = PengeluaranBarangDetail::create([
+                    'id_pengeluaran' => $data->id, 
+                    'id_barang' => $val[0], 
+                    'id_satuan_barang_kecil' => $val[4], 
+                    'qty' => $val[3], 
+                ]);
+
+                $epcdata = DB::table('pengeluaran_barang_detail_epc_tag')->insert([
+                    'id_pengeluaran_barang_detail' => $dtl->id, 
+                    'id_barang' => $val[0], 
+                    'id_epc_tag' => $epc[strtolower($request->list_tag[$val[0]][0])], 
+                ]);
+
+            }
+            
+            
+            // DB::table('barang_epc_tag')->select('id', DB::raw('LOWER(epc_tag) AS epc_tag'))->where('status', '1')->pluck('id', 'epc_tag')->toArray();
 
 
         } catch (\Illuminate\Database\QueryException $ex) {
