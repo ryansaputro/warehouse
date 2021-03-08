@@ -60,8 +60,8 @@ class PengeluaranBarangController extends Controller
         $detail = DB::table('pengeluaran_barang_detail')
                     ->select('pengeluaran_barang_detail.id', 'id_barang', 'nama_barang', 'qty AS qty_kecil', 'besar.nama_satuan AS nama_satuan_besar', 'kecil.nama_satuan AS nama_satuan_kecil', 'barang.fraction', 'besar.id AS id_satuan_besar', 'kecil.id AS id_satuan_kecil')
                     ->join('barang', 'barang.id', '=', 'pengeluaran_barang_detail.id_barang')
-                    ->join('barang_satuan AS kecil', 'kecil.id', '=', 'pengeluaran_barang_detail.id_satuan_barang_kecil')
-                    ->join('barang_satuan AS besar', 'besar.id', '=', 'pengeluaran_barang_detail.id_satuan_barang_besar')
+                    ->join('barang_satuan AS kecil', 'kecil.id', '=', 'barang.id_satuan_barang_kecil')
+                    ->join('barang_satuan AS besar', 'besar.id', '=', 'barang.id_satuan_barang_besar')
                     ->where('pengeluaran_barang_detail.id_pengeluaran', $data->id)
                     ->orderBy('pengeluaran_barang_detail.id_barang', 'ASC')
                     ->get();
@@ -103,6 +103,8 @@ class PengeluaranBarangController extends Controller
                 'id_user' => Auth::user()->id,
                 'id_unit_pengirim' => $request->id_unit_pengirim,
                 'id_unit_penerima' => $request->id_unit_penerima,
+                'id_lokasi_pengirim' => $request->id_lokasi_pengirim,
+                'id_lokasi_penerima' => $request->id_lokasi_penerima,
                 'tgl_pengeluaran'  => $request->tanggal." ".date('H:i:s'),
                 'status_posting' => '1',
             ]);
@@ -122,6 +124,9 @@ class PengeluaranBarangController extends Controller
                     'id_barang' => $val[0], 
                     'id_epc_tag' => $epc[strtolower($request->list_tag[$val[0]][0])], 
                 ]);
+
+                 // update tag is not used
+                $updateUsedTag = DB::table('relasi_epc_barang')->where('id_barang', $val[0])->update(['is_used' => '1']);
 
             }
             
@@ -200,7 +205,9 @@ class PengeluaranBarangController extends Controller
     public function cekposting(Request $request) {
         //get id penerimaan 
         $data = DB::table('pengeluaran_barang')->where('no_pengeluaran', $request->no_pengeluaran)->first();
-
+        $asal = $data->id_lokasi_pengirim; 
+        $target = $data->id_lokasi_penerima;
+        
         //cek apakah tag sudah terisi semua atau belum
         $cekDataPengeluaran = DB::table('pengeluaran_barang_detail')->where('id_pengeluaran', $data->id);
         $id_barang = $cekDataPengeluaran->pluck('id_barang')->toArray();
@@ -211,7 +218,12 @@ class PengeluaranBarangController extends Controller
             $list_barang[] = array("id_barang" => $v, "qty"=> $qty[$k], "id_unit_penerima" => $data->id_unit_penerima, 'id_gudang' => $data->id_unit_pengirim);
         }
 
-        $data = $this->GeneralController->UpdateStok('pengeluaran', $list_barang, $no_surat);
+        // update tag is not used
+        $updateUsedTag = DB::table('relasi_epc_barang')->whereIn('id_barang', $id_barang)->update(['is_used' => '1']);
+
+        // update stok
+        $data = $this->GeneralController->UpdateStok('pengeluaran', $list_barang, $no_surat, $asal, $target);
+
 
         if($data){
             return response()->json(['status' => 'success'], 200);

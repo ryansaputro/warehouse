@@ -96,7 +96,7 @@
               </model-select>
             </div>
             <div class="form-group" v-if="form.id_barang != ''">
-              <label>Satuan Penerimaan Barang</label>
+              <label>Satuan Pengeluaran Barang</label>
               <select class="form-control" v-model="form.satuan" @change="onChange($event)">
                 <option value="" disabled>-Pilih Satuan-</option>
                 <option value="satuan_besar">Satuan Besar</option>

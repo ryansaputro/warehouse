@@ -277,7 +277,7 @@ class PenerimaanBarangController extends Controller
                         'id_barang' => $v->id_barang,
                         'id_epc_tag' => $v->id,
                     ],[
-                        'is_used' => DB::raw('IF(is_used = "1", "0", "1")')
+                        'is_used' => DB::raw('IF(is_used = "0", "1", "0")')
                 ]);
 
             }

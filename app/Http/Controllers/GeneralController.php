@@ -137,12 +137,14 @@ class GeneralController extends Controller
                         ->join('barang_epc_tag', 'relasi_epc_barang.id_epc_tag', '=', 'barang_epc_tag.id')
                         ->join('barang', 'relasi_epc_barang.id_barang', '=', 'barang.id')
                         ->where('id_barang', $request->id)
+                        ->where('is_used', '=', '0')
                         ->get();       
                 
-        $usedTag =   $dataTag;//->where('is_used', '1');
+        $usedTag =   $dataTag;//->where('is_used', '=', '1')->toSql();
 
         if(isset($request->lokasi_pengirim)){
             $stok = DB::table('stok_barang')->where('id_barang', $request->id)->where('id_gudang', $request->lokasi_pengirim)->value('qty');
+            $stok = (Int)$stok;
         }else{
             $stok = 0;
         }
@@ -180,7 +182,7 @@ class GeneralController extends Controller
         return ['data' => $list_barang];
     }
     // update stok dr penerimaan ataupun dr pengeluaran
-    public function UpdateStok($jenis_permintaan, $list_data, $nomor_surat)
+    public function UpdateStok($jenis_permintaan, $list_data, $nomor_surat, $asal=null, $target=null)
     {
         DB::beginTransaction();
         try {
@@ -188,12 +190,22 @@ class GeneralController extends Controller
             //cek jika status dikeluarin 
             if($jenis_permintaan == "pengeluaran"){
                 foreach($list_data AS $k => $v){
+
                     // satuan yg masuk ke stock satuan terkecil
+                    // mengurangi stok dr asal gudang
                     $list_barang = Stok::updateOrCreate([
                         'id_barang' => $v['id_barang'],
-                        'id_gudang' => $v['id_gudang'],
+                        'id_gudang' => $asal,
                     ],[
                         'qty' => DB::raw('qty-'.$v['qty'])
+                    ]);   
+                    
+                    // menambah stok ke target gudang
+                    $list_barang = Stok::updateOrCreate([
+                        'id_barang' => $v['id_barang'],
+                        'id_gudang' => $target,
+                    ],[
+                        'qty' => DB::raw('qty+'.$v['qty'])
                     ]);            
                 }
 
